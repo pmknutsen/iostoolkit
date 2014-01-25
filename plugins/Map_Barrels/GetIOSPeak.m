@@ -49,6 +49,12 @@ axis equal off
 % get ROI, which should be drawn conservatively around the region of
 % activation
 mBW = roipoly;
+if isempty(mBW)
+        mMaskMap = [];
+        mMap = [];
+        return
+end
+
 mMaskMap = mMap .* mBW;
 mMaskMap(mMaskMap == 0) = NaN;
 

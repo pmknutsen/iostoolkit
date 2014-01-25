@@ -1,32 +1,34 @@
 function varargout = ISI_analysisGUI(varargin)
-% ISI_analysisGUI M-file for ISI_analysisGUI.fig
-%      ISI_analysisGUI, by itself, creates a new ISI_analysisGUI or raises
-%      the existing
-%      singleton*.
+% ISI_analysisGUI Run the IOSTOOLKIT GUI
 %
-%      H = ISI_analysisGUI returns the handle to a new ISI_analysisGUI or
-%      the handle to
-%      the existing singleton*.
+% Usage:
+%   < IOS_analysisGUI >
+%   Runs the IOS Toolkit GUI
 %
-%      ISI_analysisGUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in ISI_analysisGUI.M with the given input arguments.
-%
-%      ISI_analysisGUI('Property','Value',...) creates a new ISI_analysisGUI or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before ISI_analysisGUI_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property
-%      application
-%      stop.  All inputs are passed to ISI_analysisGUI_OpeningFcn via varargin.
-%
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
+%   Alternative syntax for running subroutines:
+%     global IOS
+%     IOS.SUB(arg1, ..., argn)
+%   where SUB is the subroutine to run.
 %
 
-% VERSIONS:
-% 2011.10.31    mjp               initial version
-% 2012.01.01    Per M Knutsen     modified GUI and backend code. Source hosted on GitHub
+% IOS Toolkit - Matlab toolkit for analysis of IOS data
+% Copyright (C) 2014 Application Authors
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+% 
 
-% Last Modified by GUIDE v2.5 22-May-2012 17:24:17
+% Last Modified by GUIDE v2.5 22-Jan-2014 11:12:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -48,13 +50,9 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before ISI_analysisGUI is made visible.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code to execute just before ISI_analysisGUI is made visible
 function ISI_analysisGUI_OpeningFcn(hObject, eventdata, handles, varargin) %#ok
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to ISI_analysisGUI (see VARARGIN)
 
 handles.pathstr = pwd;     % initial file directory
 set(handles.path,'string',handles.pathstr);
@@ -67,32 +65,46 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes ISI_analysisGUI wait for user response (see UIRESUME)
-% uiwait(handles.ISIanalysisGUI_fig);
-
 % Add plugin folder to path
 addpath([fileparts(mfilename('fullpath')) filesep 'plugins']);
 
+% Print copyright message
+clc
+disp('IOS Toolkit - Matlab toolkit for analysis of IOS data')
+disp('Copyright (C) 2014 by Application Authors')
+disp('This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are')
+disp(sprintf('are welcome to redistribute it under certain conditions; see LICENSE for details.\n'))
+
+% Get list of all internal sub-routines
+disp('Initializing function handles...')
+csStr = mlintmex('-calls', which(mfilename));
+[~,~,~,~,subs] = regexp(csStr, '[S]\d* \d+ \d+ (\w+)\n');
+cSubs = [subs{:}]';
+
+% Generate function handles for all sub-routines
+global ISI;
+IOS = struct([]);
+for i = 1:length(cSubs)
+    ISI(1).(cSubs{i}) = eval(['@' cSubs{i}]);
+end
+
+disp(sprintf('\nNote on use:\nYou can run IOS Toolkit routines directly with syntax ISI.SUB() (where ISI is global).\n'))
+
 return
 
-% --- Outputs from this function are returned to the command line.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Outputs from this function are returned to the command line.
 function varargout = ISI_analysisGUI_OutputFcn(hObject, eventdata, handles) %#ok
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Get default command line output from handles structure
 varargout{1} = handles.output;
+return
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % file/path info
-
-
 function path_Callback(hObject, eventdata, handles) %#ok
 curpath=get(handles.path,'string');
-if ~isempty(curpath) && ~exist(curpath,'dir') %directory doesnt exist
+if ~isempty(curpath) && ~exist(curpath,'dir') % directory doesnt exist
     warndlg(sprintf('The folder: \n%s\ndoes not exist.',curpath));
     set(handles.path,'string',pwd);
     handles.pathstr=pwd;
@@ -101,15 +113,24 @@ else
 end
 guidata(hObject, handles);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Get the root path of this application
+function sPath = GetRootPath()
+sPath = which(mfilename);
+nIndx = findstr([mfilename '.m'], sPath);
+sPath = sPath(1:nIndx-1);
+return
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function path_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
 
-% --- Executes on button press in getPath.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in getPath.
 function getPath_Callback(hObject, eventdata, handles)  %#ok
 oldpath=handles.pathstr;
 if isempty(oldpath) || ~isstr(oldpath), oldpath=pwd;  end
@@ -120,6 +141,7 @@ handles.pathstr=curpath;
 guidata(hObject, handles);
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function data_filename_Callback(hObject, eventdata, handles)  %#ok
 datafile=get(handles.data_filename,'string');
 if ~exist(fullfile(handles.pathstr,datafile),'file') %file doesnt exist
@@ -132,13 +154,15 @@ end
 guidata(hObject, handles);
 
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function data_filename_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in getdatafile.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in getdatafile.
 function getdatafile_Callback(hObject, eventdata, handles) %#ok
 
 if isempty(eventdata)
@@ -176,14 +200,12 @@ guidata(hObject, handles);
 hGUI = findobj('Tag', 'ISIanalysisGUI_fig');
 set(hGUI, 'UserData', [])
 
-% Load last saved GUI state for selected file
-%LoadGUIState(handles)
-
 % Since a file was selected manually, uncheck the 'Process all files' checkbox
 set(handles.process_all_files, 'value', 0)
 return
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function vessel_filename_Callback(hObject, eventdata, handles)  %#ok
 vesselfile=get(handles.vessel_filename,'string');
 if ~exist(fullfile(handles.pathstr,vesselfile),'file') %file doesnt exist
@@ -192,13 +214,15 @@ if ~exist(fullfile(handles.pathstr,vesselfile),'file') %file doesnt exist
 end
 guidata(hObject, handles);
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function vessel_filename_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in getvessel.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in getvessel.
 function getvessel_Callback(hObject, eventdata, handles) %#ok
 curdir=pwd;
 cd(handles.pathstr); %load to path directory
@@ -209,17 +233,14 @@ cd(curdir);
 set(handles.vessel_filename,'string',vesselfile);
 guidata(hObject, handles);
 
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function whiskername_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function whiskername_Callback(hObject, eventdata, handles) %#ok
-%don't do anything, just scrape raw string, since it's only for display
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function nolight_filename_Callback(hObject, eventdata, handles) %#ok
 nolightfile=get(handles.nolight_filename,'string');
 if ~exist(fullfile(handles.pathstr,nolightfile),'file') %file doesnt exist
@@ -228,86 +249,63 @@ if ~exist(fullfile(handles.pathstr,nolightfile),'file') %file doesnt exist
 end
 guidata(hObject, handles);
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function nolight_filename_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in getnolight.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in getnolight.
 function getnolight_Callback(hObject, eventdata, handles) %#ok
 nolightfile=uigetfile('*.dat');
 set(handles.nolight_filename,'string',nolightfile);
 guidata(hObject, handles);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% analysis parameters
-function preStimDurSec_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function preStimDurSec_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function stimDurSec_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function stimDurSec_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function contour_min_Callback(hObject, eventdata, handles)  %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function contour_min_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function contour_max_Callback(hObject, eventdata, handles)  %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function contour_max_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function contour_step_Callback(hObject, eventdata, handles)  %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function contour_step_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function stiminterval_lo_Callback(hObject, eventdata, handles)  %#ok
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function stiminterval_lo_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in chk_savemovie.
-function chk_savemovie_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes on button press in chk_savemat.
-function chk_savemat_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes on button press in chk_vesselmask.
-function chk_vesselmask_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes on button press in chk_manualmask.
-function chk_manualmask_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes on button press in chk_nolight.
-function chk_nolight_Callback(hObject, eventdata, handles) %#ok
-
-% --- Executes on button press in chk_writesigframe.
-function chk_writesigframe_Callback(hObject, eventdata, handles) %#ok
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function maskthresh_Callback(hObject, eventdata, handles) %#ok
 value=str2double(get(hObject,'string'));
 if isnan(value) || ( value<0 || value>1 )
@@ -322,37 +320,173 @@ if ~isempty(hFig)
 end
 return
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function maskthresh_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 return
 
-% --- Executes on button press in chk_selectROI.
-function chk_selectROI_Callback(hObject, eventdata, handles) %#ok
-
-
-function stiminterval_hi_Callback(hObject, eventdata, handles) %#ok
-
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Executes during object creation, after setting all properties.
 function stiminterval_hi_CreateFcn(hObject, eventdata, handles) %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% buttons
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Create a structure of parameters used for analysis
+% Most parameters are read from the GUI handles/objects
+function tParams = GetParams(hObject, eventdata, handles)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function btn_run_Callback(hObject, eventdata, handles) %#ok
-% THIS is the magic button. It scrapes the form, creates the param struct,
-% and passes it to the ISI_analysis function.
+% General parameters
+tParams.useVesselMask   = get(handles.chk_vesselmask, 'value');
+tParams.sColMap         = 'gray'; % default colormap
+tParams.sAppName        = 'IOS Toolkit';
 
-%We need to stack the structs, because ISI_analysis expects a struct
-%containing an array of file parameter structs. We are only running one
-%file at a time, so we just have the filesQueue struct within setParams
+% Manual mask
+tParams.filesQueue.useManualMask    = get(handles.chk_manualmask, 'value');
+tParams.filesQueue.manualMask       = get(handles.btn_setmanualmask, 'userdata');
+
+% File parameters
+tParams.filesQueue.path2dir   = handles.pathstr;
+tParams.filesQueue.name       = get(handles.data_filename, 'string');
+tParams.filesQueue.refImage   = get(handles.vessel_filename, 'string');
+tParams.filesQueue.precision  = 'int16';
+
+% Range of trials to analyse
+if ~isempty( [get(handles.trials2use_Start, 'string')] ) && ~isempty( [get(handles.trials2use_End, 'string')] )
+    tParams.filesQueue.Trials2Use = str2double(get(handles.trials2use_Start, 'string')):str2double(get(handles.trials2use_End, 'string'));
+else
+    tParams.filesQueue.Trials2Use = [];
+end
+
+% Trials to exclude from analysis
+tParams.filesQueue.Trials2Exclude = [];
+if ~isempty(get(handles.trials2exclude, 'string'))
+    tParams.filesQueue.Trials2Exclude = str2num(get(handles.trials2exclude, 'string'));
+end
+
+% Filename
+tParams.filesQueue.Whisker    = get(handles.whiskername, 'string');
+
+% Some defaults - Not sure what these do.... TODO: Document!
+tParams.filesQueue.minFaces   = 50; % ignores contours that would be too small
+tParams.filesQueue.maxFaces   = 1000; % ignores contours that are too big
+
+% Contour lines
+contour_min     = str2double(get(handles.contour_min, 'string'));
+contour_step    = str2double(get(handles.contour_step, 'string'));
+contour_max     = str2double(get(handles.contour_max, 'string'));
+tParams.filesQueue.ContourLineVals    = contour_min:contour_step:contour_max;
+
+% Stimulus interval
+nInterval_Lo = str2double(get(handles.stiminterval_lo, 'string'));
+nInterval_Hi = str2double(get(handles.stiminterval_hi, 'string'));
+tParams.filesQueue.stimInterval = [nInterval_Lo nInterval_Hi];
+
+% Smoothing (sigma)
+tParams.filesQueue.smoothSigma  = str2double(get(handles.smooth_sigma, 'string'));
+
+% Pre- and post- stimulus durations
+tParams.filesQueue.preStimDurSec  = str2double(get(handles.preStimDurSec,'string'));
+tParams.filesQueue.stimDurSec     = str2double(get(handles.stimDurSec,'string'));
+
+% Clim on all displayed images
+climinterval_lo     = str2double(get(handles.climinterval_lo, 'string'));
+climinterval_hi     = str2double(get(handles.climinterval_hi, 'string'));
+tParams.filesQueue.climAll = [climinterval_lo climinterval_hi];
+
+% Image binning
+imgbin_x = str2double(get(handles.imgbin_x, 'string'));
+imgbin_y = str2double(get(handles.imgbin_y, 'string'));
+tParams.filesQueue.imgBin = [imgbin_x imgbin_y];
+
+tParams.filesQueue.maskthresh     = str2double(get(handles.maskthresh, 'string'));
+
+% If we are using the nolight normalization, set those parameters
+tParams.useNoLight       = get(handles.chk_nolight,'value');
+tParams.Rnolight         = tParams.filesQueue;
+tParams.Rnolight.name    = get(handles.nolight_filename,'string');
+tParams.Rnolight.Whisker ='none';
+
+% Trial averaging options
+tParams.filesQueue.useMedianCorrection = get(handles.chk_mediancorrection, 'value');
+tParams.filesQueue.useMotionCorrection = get(handles.chk_motioncorrection, 'value');
+
+% Remove axes in the main GUI
+delete(findobj(handles.ISIanalysisGUI_fig, 'type', 'axes'))
+
+return
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set the actions that are executed when the Load, Average or Analyze
+% buttons are pressed, and the processing routines that will be executed.
+function tParams = GetActions(hObject, eventdata, handles, tParams)
+
+% By default, Load, Average and Analyse
+tParams.filesQueue.DoLoad = true;
+tParams.filesQueue.DoTrialAverage = true;
+tParams.filesQueue.DoAnalyze = true;
+
+% If this function was called via the Info button, instruct next
+% scripts to only display file info, but not load or analyze data
+if hObject == handles.btn_explore
+    tParams.filesQueue.DoLoad = false;
+    tParams.filesQueue.DoTrialAverage = false;
+    tParams.filesQueue.DoAnalyze = false;
+end
+
+% If this function was called via the Load Data button, instruct next
+% scripts to only load data
+if hObject == handles.btn_loaddata
+    tParams.filesQueue.DoLoad = true;
+    tParams.filesQueue.DoTrialAverage = false;
+    tParams.filesQueue.DoAnalyze = false;
+end
+
+% If this function was called via the Average Trial button, instruct next
+% scripts to load data (if not already done so) and then average trials.
+if hObject == handles.btn_averagetrials
+    tParams.filesQueue.DoLoad = true;
+    tParams.filesQueue.DoTrialAverage = true;
+    tParams.filesQueue.DoAnalyze = false;
+end
+
+% Processing routines to run
+
+% 'Save results to MAT file'
+tParams.saveToMat       = get(handles.chk_savemat, 'value');
+
+% 'View average frame' TODO: What does it do??
+tParams.saveFig         = get(handles.chk_writesigframe, 'value');
+
+% 'View all frames'
+tParams.saveFigAll      = get(handles.chk_writesigframeall, 'value');
+
+% 'Locate evoked region'
+tParams.filesQueue.runBarrelFinder     = get(handles.chk_runBarrelFinder, 'value');
+
+% 'Save AVI movie'
+tParams.saveMovie       = get(handles.chk_savemovie, 'value');
+
+% 'ROI vs time'
+tParams.filesQueue.selectSignalROI     = get(handles.chk_selectSignalROI, 'value');
+
+% ' Profile vs time'
+tParams.filesQueue.selectSignalProfile = get(handles.chk_selectSignalProfile, 'value');
+
+return
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Execute Analysis.
+% Scrape the form, create the param struct and pass it to the ISI_analysis
+% function.
+%
+% We need to stack the structs, because ISI_analysis expects a struct
+% containing an array of file parameter structs. We are only running one
+% file at a time, so we just have the filesQueue struct within setParams
+function btn_run_Callback(hObject, eventdata, handles)
 
 % Iterate over files
 if get(handles.process_all_files, 'value')
@@ -365,8 +499,7 @@ else
 end
 
 if isempty(sFileList)
-    warndlg('No file has been selected.', 'ISI')
-    return;
+    warndlg('No file has been selected.', 'ISI'); return;
 end
 
 if isstruct(sFileList)
@@ -375,118 +508,31 @@ else
     nLoop = 1;
 end
 
+% Iterate over files
+% Usually, only the selected file is processed unless the 'Process all'
+% option is checked in the GUI
 for nFi = 1:nLoop
     set(handles.process_all_files, 'value', bForceAllOption);
     if bForceAllOption
-        % Set file name in GUI
+        % Update file name in GUI
         getdatafile_Callback(hObject, sFileList(nFi).name, handles)
         % Create waitbar
-        if ~exist('hWait')
+        if ~exist('hWait', 'var')
             hWait = waitbar(nFi/length(sFileList), 'Processing all .dat files. Please wait...');
         end
         if ishandle(hWait)
             waitbar(nFi/length(sFileList), hWait);
-        else
-            break;
-        end
+        else break; end
     end
     
     % Save all GUI settings and associate _settings.mat file current .dat file
     SaveGUIState(handles)
     
-    %first set the general parameters.
-    setParams.saveMovie=get(handles.chk_savemovie,'value');
-    setParams.saveFig=get(handles.chk_writesigframe,'value');
-    setParams.saveFigAll = get(handles.chk_writesigframeall,'value');
-    setParams.saveToMat=get(handles.chk_savemat,'value');
-    setParams.useVesselMask=get(handles.chk_vesselmask,'value');
-    
-    % Get manual mask
-    setParams.filesQueue.useManualMask=get(handles.chk_manualmask,'value');
-    setParams.filesQueue.manualMask = get(handles.btn_setmanualmask, 'userdata');
-    
-    %create the struct for all file parameters
-    setParams.filesQueue.path2dir = handles.pathstr;
-    setParams.filesQueue.name = get(handles.data_filename,'string');
-    setParams.filesQueue.refImage=get(handles.vessel_filename,'string');
-    setParams.filesQueue.precision='int16';
-    if ~isempty( [get(handles.trials2use_Start, 'string')] ) && ~isempty( [get(handles.trials2use_End, 'string')] )
-        setParams.filesQueue.Trials2Use = str2double(get(handles.trials2use_Start, 'string')):str2double(get(handles.trials2use_End, 'string'));
-    else
-        setParams.filesQueue.Trials2Use = [];
-    end
-    setParams.filesQueue.Trials2Exclude = [];
-    if ~isempty(get(handles.trials2exclude, 'string'))
-        setParams.filesQueue.Trials2Exclude = str2num(get(handles.trials2exclude, 'string'));
-    end
-    setParams.filesQueue.Whisker=get(handles.whiskername,'string');
-    setParams.filesQueue.minFaces=50; %ignores contours that would be too small
-    setParams.filesQueue.maxFaces=1000; %ignores contours that are too big
-    
-    contour_min=str2double(get(handles.contour_min,'string'));
-    contour_step=str2double(get(handles.contour_step,'string'));
-    contour_max=str2double(get(handles.contour_max,'string'));
-    setParams.filesQueue.ContourLineVals=contour_min:contour_step:contour_max;
-    stiminterval_lo=str2double(get(handles.stiminterval_lo,'string'));
-    stiminterval_hi=str2double(get(handles.stiminterval_hi,'string'));
-    setParams.filesQueue.stimInterval=[stiminterval_lo stiminterval_hi];
-    setParams.filesQueue.smoothSigma = str2double(get(handles.smooth_sigma, 'string'));
-    
-    climinterval_lo=str2double(get(handles.climinterval_lo,'string'));
-    climinterval_hi=str2double(get(handles.climinterval_hi,'string'));
-    setParams.filesQueue.climAll = [climinterval_lo climinterval_hi];
-    
-    imgbin_x = str2double(get(handles.imgbin_x, 'string'));
-    imgbin_y = str2double(get(handles.imgbin_y, 'string'));
-    setParams.filesQueue.imgBin = [imgbin_x imgbin_y];
-    
-    setParams.filesQueue.preStimDurSec=str2double(get(handles.preStimDurSec,'string'));
-    setParams.filesQueue.stimDurSec=str2double(get(handles.stimDurSec,'string'));
-    
-    setParams.filesQueue.maskthresh = str2double(get(handles.maskthresh, 'string'));
-    setParams.filesQueue.selectROI = get(handles.chk_selectROI, 'value');
-    setParams.filesQueue.selectSignalROI = get(handles.chk_selectSignalROI, 'value');
-    setParams.filesQueue.selectSignalProfile = get(handles.chk_selectSignalProfile, 'value');
-    setParams.filesQueue.runBarrelFinder = get(handles.chk_runBarrelFinder, 'value');
-    
-    % By default, load data, average trials and run analysis
-    setParams.filesQueue.DoLoad = true;
-    setParams.filesQueue.DoTrialAverage = true;
-    setParams.filesQueue.DoAnalyze = true;
-    
-    % If this function was called via the Info button, instruct next
-    % scripts to only display file info, but not load or analyze data
-    if hObject == handles.btn_explore
-        setParams.filesQueue.DoLoad = false;
-        setParams.filesQueue.DoTrialAverage = false;
-        setParams.filesQueue.DoAnalyze = false;
-    end
-    
-    % If this function was called via the Load Data button, instruct next
-    % scripts to only load data
-    if hObject == handles.btn_loaddata
-        setParams.filesQueue.DoLoad = true;
-        setParams.filesQueue.DoTrialAverage = false;
-        setParams.filesQueue.DoAnalyze = false;
-    end
-    
-    % If this function was called via the Average Trial button, instruct next
-    % scripts to load data (if not already done so) and then average trials.
-    if hObject == handles.btn_averagetrials
-        setParams.filesQueue.DoLoad = true;
-        setParams.filesQueue.DoTrialAverage = true;
-        setParams.filesQueue.DoAnalyze = false;
-    end
-    
-    % if we are using the nolight normalization, set those parameters
-    setParams.useNoLight=get(handles.chk_nolight,'value');
-    setParams.Rnolight=setParams.filesQueue;
-    setParams.Rnolight.name=get(handles.nolight_filename,'string');
-    setParams.Rnolight.Whisker='none';
+    % Seed the parameters structure with default and GUI values
+    setParams = GetParams(hObject, eventdata, handles);
 
-    % trial averaging options
-    setParams.filesQueue.useMedianCorrection = get(handles.chk_mediancorrection, 'value');
-    setParams.filesQueue.useMotionCorrection = get(handles.chk_motioncorrection, 'value');
+    % Decide actions (Load, Average and/or Analyse)
+    setParams = GetActions(hObject, eventdata, handles, setParams);
     
     % Run analysis
     try
@@ -495,12 +541,13 @@ for nFi = 1:nLoop
         errordlg({['Error using ==> ', e.stack(1).name, ' at ' num2str(e.stack(1).line)],...
             '',e.message,''},...
             'Oops.');
-        %rethrow(e);
         break;
     end
     
 end
-if exist('hWait')
+
+% Close waitbar
+if exist('hWait', 'var')
     if ishandle(hWait)
         close(hWait)
     end
@@ -508,15 +555,14 @@ end
 
 return
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% --- Executes on button press in btn_explore.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_explore.
 function btn_explore_Callback(hObject, eventdata, handles) %#ok
 btn_run_Callback(hObject, eventdata, handles)
 return
 
-% --- Executes on button press in btn_viewmask.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_viewmask.
 function btn_viewmask_Callback(hObject, eventdata, handles) %#ok
 if isempty(get(handles.vessel_filename,'string'))
     warndlg('No vessel filename given');
@@ -526,145 +572,73 @@ else
 end
 return
 
-function trials2use_Start_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function trials2use_Start_CreateFcn(hObject, eventdata, handles)
-
-
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function trials2use_End_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function trials2use_End_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function framebinsize_Callback(hObject, eventdata, handles)
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function framebinsize_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in chk_writesigframeall.
-function chk_writesigframeall_Callback(hObject, eventdata, handles)
-
-function edit21_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
-function edit21_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-function edit22_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
-function edit22_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit22 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit23_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-function edit23_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in btn_loaddata.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_loaddata.
 function btn_loaddata_Callback(hObject, eventdata, handles)
 btn_run_Callback(hObject, eventdata, handles)
 return
 
-
-% --- Executes on button press in chk_selectSignalROI.
-function chk_selectSignalROI_Callback(hObject, eventdata, handles)
-
-% --- Executes on button press in chk_runBarrelFinder.
-function chk_runBarrelFinder_Callback(hObject, eventdata, handles)
-
-function climinterval_lo_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function climinterval_lo_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-function climinterval_hi_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function climinterval_hi_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function imgbin_x_Callback(hObject, eventdata, handles)
-% hObject    handle to imgbin_x (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of imgbin_x as text
-%        str2double(get(hObject,'String')) returns contents of imgbin_x as a double
-
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function imgbin_x_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to imgbin_x (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function imgbin_y_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function imgbin_y_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function smooth_sigma_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function smooth_sigma_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in btn_apply_clim.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_apply_clim.
 function btn_apply_clim_Callback(hObject, eventdata, handles)
 % Apply new colormap limits (clim) to all open figures
 hFig = findobj(0, 'type', 'figure');
@@ -676,41 +650,27 @@ nCLimHi = nCLimHi / 1000; % percent
 for hf = hFig(:)
     set(findobj(hf, 'type', 'axes'), 'clim', [nCLimLo nCLimHi])
 end
-
 return
 
-
-% --- Executes on button press in checkbox10.
-function checkbox10_Callback(hObject, eventdata, handles)
-return
-
-
-% --- Executes on button press in btn_averagetrials.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_averagetrials.
 % Load data, if not already done, and compute trial averages
 function btn_averagetrials_Callback(hObject, eventdata, handles)
 btn_run_Callback(hObject, eventdata, handles)
 return
 
-
-% --- Executes on button press in chk_selectSignalProfile.
-function chk_selectSignalProfile_Callback(hObject, eventdata, handles)
-
-return
-
-
-% --- Executes on button press in process_all_files.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in process_all_files.
 function process_all_files_Callback(hObject, eventdata, handles)
-
 if get(hObject, 'value')
     set(handles.data_filename, 'enable', 'off')
 else
     set(handles.data_filename, 'enable', 'on')
 end
-
 return
 
-
-% --- Executes on selection change in popup_plugins.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Run plugin from pop-up menu
 function popup_plugins_Callback(hObject, eventdata, handles)
 % Run selected plugin
 sPlugin = get(hObject, 'string');
@@ -725,16 +685,11 @@ sPath = [sPath(1:vIndx(end)) 'plugins' filesep sPlugin{sPluginId} filesep];
 addpath(sPath)
 
 % Run plugin
-%try
-    eval(sprintf('%s(hObject, eventdata, handles);',sPlugin{sPluginId}))
-%catch
-%    errordlg(sprintf('An error occurred when running the %s plugin:\n\n %s', sPlugin{sPluginId}, lasterr))
-%end
-%cd(sPwd)
-
+eval(sprintf('%s(hObject, eventdata, handles);',sPlugin{sPluginId}))
 return
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Populate pop-up menu with list of plug-ins in /plugins/ folder
 function popup_plugins_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -759,15 +714,16 @@ cd(sPwd)
 
 % Update popup menu in GUI
 set(hObject, 'string', cPlugins)
-
 return
 
-% --- Executes on button press in btn_setmanualmask.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_setmanualmask.
 function btn_setmanualmask_Callback(hObject, eventdata, handles) %#ok
 tMask = ISI_setManualMask(fullfile(handles.pathstr, get(handles.vessel_filename,'string')), hObject);
 return
 
-% --- Executes on slider movement.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on slider movement.
 function slider_maskThresh_Callback(hObject, eventdata, handles)
 set(handles.maskthresh, 'string', num2str(get(hObject, 'value')))
 % mask preview window is open, then update it
@@ -777,25 +733,24 @@ if ~isempty(hFig)
 end
 return
 
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function slider_maskThresh_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
 return
 
-function trials2exclude_Callback(hObject, eventdata, handles)
-return
-
-% --- Executes during object creation, after setting all properties.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes during object creation, after setting all properties.
 function trials2exclude_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 return
 
-
-% --- Executes on button press in btn_activitymonitor.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_activitymonitor.
 function btn_activitymonitor_Callback(hObject, eventdata, handles)
 
 % Get data from GUI, if already set
@@ -809,7 +764,7 @@ if ~isempty(tUserData)
 end
 if isempty(ISIdata), warndlg('You must first load a .dat file', 'ISI Analysis'); return, end
 
-% produce an average of all frames in a single movie
+% Produce an average of all frames in a single movie
 % use this to look for motion artefacts within single trials
 nTrials = size(ISIdata.frameStack, 1);
 
@@ -824,7 +779,7 @@ else
 end
 
 nrow = floor(sqrt(nTrials));
-ncol = round(nTrials / nrow);
+ncol = ceil(nTrials / nrow);
 
 t = 1;
 for j = 1:nrow
@@ -850,7 +805,6 @@ for j = 1:nrow
         if ~ishandle(hFig), return, end
         figure(hFig)
         imagesc(mImg)
-        %set(gca,'clim',[-10 10])
         
         axis image off
         hTxt = text(15, 30, num2str(t), ...
@@ -859,10 +813,10 @@ for j = 1:nrow
         drawnow
     end
 end
-
 return
 
-% --- Save state of GUI
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Save state of GUI
 function SaveGUIState(handles)
 vChild = findobj(handles.ISIanalysisGUI_fig);
 cExceptions = {'ISIanalysisGUI_fig'}; % tags of handles that should not be saved
@@ -882,10 +836,15 @@ for c = 1:length(vChild)
     end
 end
 sSaveAs = strrep(fullfile(handles.pathstr, get(handles.data_filename,'string')), '.dat', '_UIValues.mat');
-save(sSaveAs, 'tState')
+try
+    save(sSaveAs, 'tState')
+catch
+    disp([mfilename ': Failed to save GUI state.'])
+end
 return
 
-% --- Restore state of GUI form last saved settings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Restore state of GUI form last saved settings
 function LoadGUIState(handles)
 vChild = findobj(handles.ISIanalysisGUI_fig);
 sLoadFile = strrep(fullfile(handles.pathstr, get(handles.data_filename,'string')), '.dat', '_UIValues.mat');
@@ -922,21 +881,3 @@ for t = 1:length(csFieldnames)
 end
 guidata(handles.ISIanalysisGUI_fig, handles);
 return
-
-
-% --- Executes on button press in chk_mediancorrection.
-function chk_mediancorrection_Callback(hObject, eventdata, handles)
-% hObject    handle to chk_mediancorrection (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of chk_mediancorrection
-
-
-% --- Executes on button press in chk_motioncorrection.
-function chk_motioncorrection_Callback(hObject, eventdata, handles)
-% hObject    handle to chk_motioncorrection (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of chk_motioncorrection

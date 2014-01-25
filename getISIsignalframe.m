@@ -1,4 +1,4 @@
-function signalFrame=getISIsignalframe(ISIdata,stimi,figureflag)
+function signalFrame = getISIsignalframe(ISIdata, stimi, figureflag)
 %signalFrame=getISIsignalframe(ISIdata,stiminterval,figureflag)
 %  given ISIdata, isolate signal frame within given stiminterval.
 %  plot the stimulus frame and the signal frame if flag is true
@@ -22,7 +22,6 @@ binpersec = ISIdata.frame_rate/ISIdata.bin_duration;
 stimi = floor(stimi ./ (1/binpersec)) .* (1/binpersec); % added, Per 012312
 
 % average deltaR across baseline, stim, and "poststim",
-
 stimFrameix=(ISIdata.nPreStimFrames+1):(ISIdata.nPreStimFrames+ISIdata.nStimFrames);
 stimFrame=mean(ISIdata.deltaSignal(:,:,stimFrameix),3);
 maxval1=max(max(stimFrame)); minval1=min(min(stimFrame));

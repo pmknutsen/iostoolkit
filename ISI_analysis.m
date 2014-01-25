@@ -73,11 +73,6 @@ for iFile = 1 : numel(prmts.filesQueue)
         return
     end
     
-    % Select ROI from vessel map
-    %if prmts.filesQueue(iFile).selectROI
-    %    ISIdata = ISI_selectROI(ISIdata, prmts.filesQueue(iFile));
-    %end
-
     % Compute trial-averaged frames, if:
     % 1) averages have not already been computed, or
     % 2) the Average Trials button was pressed

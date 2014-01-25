@@ -1,5 +1,9 @@
 function ISI_plotSignalByTime(ISIdata, prmts, cmap)
 % ISI_plotSignalByTime(ISIdata)
+% Manually select one or more regions of interest (ROI) on vessel or signal
+% images and display the ROI signal amplitude as a function of time (frame).
+%
+%
 
 % Get/generate ROI
 if isfield(ISIdata, 'analysisSignalROI')
@@ -19,6 +23,7 @@ vTime = (((ISIdata.frame_rate/ISIdata.bin_duration):f+((ISIdata.frame_rate/ISIda
     - (ISIdata.nPreStimFrames / (ISIdata.frame_rate/ISIdata.bin_duration)) ...
     - 1;
 
+% Plot stimulus
 hSignal = subplot(2,4,[1:3 5:7]);
 plot([0 prmts.stimDurSec], [0 0], 'r', 'linewidth', 10)
 hold on
@@ -45,15 +50,16 @@ for r = 1:length(tROI)
         mWin = NaN;
     end
     
-    for f = 1:size(ISIdata.deltaSignal, 3)
+    % Iterate over frames
+    for f = 1:size(ISIdata.deltaSignal, 3) % [x y t]
         
         % Frame signal
         mFrameSignal = ISIdata.deltaSignal(:,:,f);
         if ~isnan(mWin)
             mFrameSignal = single(filter2(mWin, mFrameSignal, 'same'));
         end
-        mFrameSignal = mFrameSignal .* mROI;
-        vMean(f) = nanmean(mFrameSignal(:));
+        mFrameSignal = mFrameSignal .* mROI; % frame masked by ROI
+        vMean(f) = nanmean(mFrameSignal(:)); % average intensity of all ROI pixels
         
         % Frame error
         if ~isempty(ISIdata.deltaError)

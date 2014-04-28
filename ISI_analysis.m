@@ -122,17 +122,17 @@ for iFile = 1 : numel(prmts.filesQueue)
         end
     end
     
-    % Isolate barrel
+    % Locate the evoked region
     if prmts.filesQueue(iFile).runBarrelFinder
         % Create vessel mask
-        vesselfile=fullfile(prmts.filesQueue(iFile).path2dir, prmts.filesQueue(iFile).refImage);
-        vthresh=prmts.filesQueue(iFile).maskthresh;
+        vesselfile = fullfile(prmts.filesQueue(iFile).path2dir, prmts.filesQueue(iFile).refImage);
+        vthresh = prmts.filesQueue(iFile).maskthresh;
         
         if ~prmts.useVesselMask || ~exist(vesselfile,'file')
             vmask = ones(ISIdata.frameSizeYX);
         else
             vmask = imread(vesselfile);
-            vmask = mat2gray(vmask); %don't really need to normalize, but do it for clarity
+            vmask = mat2gray(vmask); % don't really need to normalize, but do it for clarity
             vmask = im2bw(vmask,vthresh);
         end
         ISIdata.vesselmask = vmask;

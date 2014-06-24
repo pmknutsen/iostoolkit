@@ -11,9 +11,10 @@ else
     error('incorrect number of arguments');
 end
     
+% load file
+img = imread(filename);
+Igray = mat2gray(img); %don't really need to normalize, but do it for clarity
+imgmask = im2bw(Igray,thresh);
 
-%load file
-img=imread(filename);
-Igray=mat2gray(img); %don't really need to normalize, but do it for clarity
-imgmask=im2bw(Igray,thresh);
 
+return

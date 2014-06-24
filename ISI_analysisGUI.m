@@ -163,36 +163,41 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Executes on button press in getdatafile.
-function getdatafile_Callback(hObject, eventdata, handles) %#ok
+function getdatafile_Callback(hObject, eventdata, handles)
 
 if isempty(eventdata)
     curdir = pwd;
-    cd(handles.pathstr); %load to path directory
-    oldfile=get(handles.data_filename,'string');
-    [datafile,path2file]=uigetfile('*.dat');
+    cd(handles.pathstr); % move to path directory
+    [datafile, path2file] = uigetfile( ...
+        {'*.dat','LabView files (*.dat)'; ...
+        '*.bin','Streamer files (*.bin)'; ...
+        '*.*',  'All Files (*.*)'}, ...
+        'Pick a file');
     
-    if datafile==0, datafile=oldfile; end %cancelled out
-    cd(curdir);
-    set(handles.data_filename,'string',datafile);
-    %update also path to selected file
-    set(handles.path,'string',path2file);
-    handles.pathstr=path2file;
+    if datafile == 0 % user pressed cancel
+        return;
+    end
     
+    cd(curdir); % return to original directory
+    set(handles.data_filename, 'string', datafile);
+    
+    % Update path to selected file
+    set(handles.path,'string', path2file);
+    handles.pathstr =path2file;
 else
-    % use passed file name
+    % Use passed file name passed as function argument
     datafile = eventdata;
-    set(handles.data_filename,'string',datafile);
+    set(handles.data_filename, 'string', datafile);
 end
 
-name = regexp(datafile,'(.+)_\w{6}.dat','tokens');
+% Try to get whisker name
+sWhiskerID = regexp(datafile, '(.+)_\w{6}.dat', 'tokens');
 
-if ~isempty(name)
-    set(handles.whiskername,'string',name{1});
+if ~isempty(sWhiskerID)
+    set(handles.whiskername,'string', sWhiskerID{1});
 else
-    %     warning('ISI_analysisGUI:getdatafile','Couldn''t isolate whisker name, please enter it manually.');
-    warndlg('Couldn''t isolate whisker name, please enter it manually.','ISI_analysisGUI:getdatafile');
-    
-    set(handles.whiskername,'string','');
+    warndlg('Could not find whisker name. Please enter it manually.', 'IOSToolkit');
+    set(handles.whiskername, 'string', 'Unknown');
 end
 
 guidata(hObject, handles);
@@ -684,8 +689,14 @@ sPath = [sPath(1:vIndx(end)) 'plugins' filesep sPlugin{sPluginId} filesep];
 % Add path
 addpath(sPath)
 
+% Remove axes that were drawn into the GUI window
+delete(findobj(gcf, 'type', 'axes'))
+
 % Run plugin
 eval(sprintf('%s(hObject, eventdata, handles);',sPlugin{sPluginId}))
+
+% Remove axes that were drawn into the GUI window
+delete(findobj(gcf, 'type', 'axes'))
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

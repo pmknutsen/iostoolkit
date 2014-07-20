@@ -96,14 +96,14 @@ vBgFrames = (T.nSkipInitialFrames+1):T.nNumColChans:(T.nVideoNumFrames-T.nNumCol
 vBgFrames = vBgFrames(unique(round(linspace(1, length(vBgFrames), T.nBaselineFrames))));
 
 for fi = 1:length(vBgFrames)
-    f = vBgFrames(fi);
-    for c = 1:T.nNumColChans
-        fc = f + c;
+    f = vBgFrames(fi); % abs frame#
+    for c = 0:(T.nNumColChans-1)
+        fc = f + c; % abs frame# of c'th channel
         if ishandle(hWait)
             waitbar(fc/T.nVideoNumFrames, hWait)
         else break; end
         mFrame = double(ISI_readStreamer(FID, fc, T.vVideoRes));
-        mBaselineSums(:, :, c) = mBaselineSums(:, :, c) + mFrame;
+        mBaselineSums(:, :, c+1) = mBaselineSums(:, :, c+1) + mFrame;
     end
     if ~ishandle(hWait), break; end
 end
@@ -166,6 +166,7 @@ for c = 1:T.nNumColChans
     mG = mG .* (max(vY) - min(vY));
     mG = mG + min(vY);
     T.mRadIntensityMask(:, :, c) = mG;
+    T.vRadIntensityMaskSigma(c) = vB(3);
 end
 if ishandle(hWait), close(hWait); end
 
@@ -176,8 +177,10 @@ T.vCircBufferIndx = nan(T.nNumColChans, T.nCircBufferSize);
 % Get order of frames based on standard deviation
 T.vChOrder = 1:T.nNumColChans;
 mA = double(ISI_readStreamer(FID, T.nSkipInitialFrames+1, T.vVideoRes));
+mA = mA - T.mRadIntensityMask(:, :, 1);
 mB = double(ISI_readStreamer(FID, T.nSkipInitialFrames+2, T.vVideoRes));
-if  std(mA(:)) > std(mB(:))
+mB = mB - T.mRadIntensityMask(:, :, 2);
+if std(mA(:)) > std(mB(:))
     T.vChOrder = fliplr(T.vChOrder); % order is [red blue ...]
 end
 T.mBaseline = T.mBaseline(:, :, T.vChOrder);
@@ -201,17 +204,17 @@ set(T.hFrameLegend, 'units', 'normalized', 'position', [.02 .05]);
 % Iterate over video frames
 vFrames = (T.nSkipInitialFrames+1):T.nVideoNumFrames;
 T.f = get(T.hFrameSlider, 'value');
-f = 1;
+f = 0;
 T.vCLim = [0 1];
 %%
 nCounter = 0;
-while f <= (length(vFrames) - T.nFramestep)
+while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
     % Quit loop if window was closed
     if ~ishandle(T.hFig), break; end
     if get(T.hStopButton, 'value'), break; end
     
     % Check if slider was moved
-    if get(T.hFrameSlider, 'value') ~= T.f
+    if get(T.hFrameSlider, 'value') ~= T.f && (f ~= 0)
         f = find(vFrames == round(get(T.hFrameSlider, 'value')));
     else
         f = f + T.nFramestep;
@@ -222,7 +225,7 @@ while f <= (length(vFrames) - T.nFramestep)
     T.mFrame = double(ISI_readStreamer(FID, T.f, T.vVideoRes));
 
     % Determine channel
-    T.nCh = mod(T.f, T.nNumColChans) + 1;
+    T.nCh = mod(T.f - 1, T.nNumColChans) + 1;
 
     % Update circular frame buffer
     nCircIndx = mod(f-1, T.nCircBufferSize*T.nNumColChans) ./ T.nNumColChans + 1 ...
@@ -253,7 +256,7 @@ while f <= (length(vFrames) - T.nFramestep)
         
         % Update graphs
         if isfield(T, 'mGraphs')
-            nStart = (T.nSkipInitialFrames+1) + T.nCh;
+            nStart = (T.nSkipInitialFrames) + T.nCh;
             mYY = T.mGraphs(nStart:T.nNumColChans:end, T.nCh);
             mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
             set(T.hGraphs(T.nCh), 'xdata', mXX, 'ydata', mYY);

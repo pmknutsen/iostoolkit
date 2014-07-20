@@ -30,12 +30,13 @@ if T.nCh == T.vChOrder(1)   % Red channel
     end
     
     % Get average signal amplitude across all pixels
-    T.mGraphs(T.f, T.nCh) = nanmean(T.mFrame(:));
+    T.mGraphs(T.f, 1) = nanmean(T.mFrame(:)); %CM_20140610 to grow to have the diameter channel
     
 elseif T.nCh == T.vChOrder(2)   % Blue channel (vessels)
 
     % Normalize vessel image
     T = NormalizeVesselFrame(T);
+    T=CM_IOS_SANDBOX_CELINE(T);
 
     % Mask image (show non-vessels)
     if isfield(T, 'cMasks')
@@ -46,10 +47,10 @@ elseif T.nCh == T.vChOrder(2)   % Blue channel (vessels)
     % Get signal amplitude
     % CELINE: You can calculate vessel diameters here and insert into
     % mGraphs for plotting in the window, like below.
-    T.mGraphs(T.f, T.nCh) = nansum(T.mFrame(:));
-
+    T.mGraphs(T.f, 2) = nansum(T.mFrame(:));
+     
     % Get intensity range
-    T.vCLim = [-.07 .11]; % [min(T.mFrame(:))*1.2 max(T.mFrame(:))*1];
+    T.vCLim = [-.2 .2]; % [min(T.mFrame(:))*1.2 max(T.mFrame(:))*1];
 
     % Compute a vessel and non-vessel masks from the 'blue' image
     if ~isfield(T, 'cMasks')
@@ -64,6 +65,7 @@ elseif T.nCh == T.vChOrder(2)   % Blue channel (vessels)
 
         close(hWait)
     end
+    
     
 else
     error('Unrecognized video channel.');

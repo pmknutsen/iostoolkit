@@ -52,13 +52,20 @@ for iFile = 1 : numel(prmts.filesQueue)
     % buttons)
     if isempty(ISIdata) || ...
             (prmts.filesQueue.DoLoad && ~prmts.filesQueue.DoTrialAverage && ~prmts.filesQueue.DoAnalyze)
-        % read data
-        ISIdata = ISI_read(prmts.filesQueue(iFile));
+        
+        switch lower(prmts.filesQueue(iFile).name(end-3:end))
+            case '.dat'
+                % Read .dat file (from old LabView application)
+                ISIdata = ISI_read(prmts.filesQueue(iFile));
+            case '.bin'
+                % Read .dat file (from old LabView application)
+                ISIdata = ISI_readBIN(prmts.filesQueue(iFile));
+        end
         
         % store data in GUI
         set(hGUI, 'UserData', ISIdata)
     end
-
+    
     % Exit here if we should not average trials
     if ~prmts.filesQueue.DoTrialAverage
         return

@@ -11,4 +11,12 @@ function iostoolkit
 
 ISI_analysisGUI();
 
+% Add all sub-folders recursively to path\
+% This will include the /plugin/ folder and all its sub-folders to the
+% path.
+disp('Initializing paths...')
+sPath = which('iostoolkit');
+sPath = sPath(1:end-12);
+addpath(genpath(sPath), '-end');
+
 return

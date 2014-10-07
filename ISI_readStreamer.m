@@ -1,4 +1,4 @@
-function mFrames = ISI_readStreamer(sFile, varargin)
+function [mFrames, varargout] = ISI_readStreamer(sFile, varargin)
 % READSTREAMER Read Streamer binary files into Matlab
 %
 % M = readstreamer(F)
@@ -117,5 +117,18 @@ end
 if ~isnumeric(sFile)
     fclose(hFID);
 end
+
+% Populate varargout with a structure containing video info (resolution etc)
+tInfo(1).vResolution = vResolution(1:2);
+tInfo(1).sFile = sFile;
+tInfo(1).nBitDepth = vResolution(3);
+tInfo(1).nBytesPerFrame = nFrameBytes;
+tInfo(1).nNumMissedFrames = nNumMissedFrames;
+tInfo(1).sType = sType;
+tInfo(1).nNumFrames = nNumFrames;
+tInfo(1).nFPS = nFPS;
+tInfo(1).nStartFrame = nFrom;
+tInfo(1).nEndFrame = nTo;
+varargout{1} = tInfo;
 
 return

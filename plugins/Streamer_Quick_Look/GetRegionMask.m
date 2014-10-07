@@ -32,17 +32,20 @@ mImg = mImg ./ max(mImg(:));
 % Binarize image (select threshold interactive if missing or NAN)
 if isempty(nBinThresh) || isnan(nBinThresh)
     hFig = figure;
+    
     hSlider = uicontrol(hFig, 'style', 'slider');
     set(hSlider, 'units', 'normalized' ...
         , 'Position', [0 0.02 1 .05] ...
         , 'Style', 'slider', 'value', .5 ...
-        , 'SliderStep', [0.01 .1]);
+        , 'SliderStep', [0.001 .01]);
     set(hFig, 'toolbar', 'figure')
     
     while ishandle(hFig)
         figure(hFig)
         colormap(gray)
         hAx(1) = subplot(1,2,1);
+        title [COLOR_STRING_NAME] % CM 20140723 to know which color is the mask
+       
         imagesc(mImg)
         axis image off
         
@@ -52,7 +55,7 @@ if isempty(nBinThresh) || isnan(nBinThresh)
         
         imagesc(mMask)
         axis image off
-
+        
         nBinThresh = get(hSlider, 'value');
         title(hAx(2), sprintf('Threshold = %.2f  Black is ON', nBinThresh));
         title(hAx(1), 'Close window when done');
@@ -85,10 +88,10 @@ for a = 1:5
             
             mCutout = mImg(vI(1):vI(2), vJ(1):vJ(2));
             mCutoutMask = mMask(vI(1):vI(2), vJ(1):vJ(2));
-
+            
             % Get mean vessel intensity
             nAvgInt = min(mCutout(mCutoutMask));
-
+            
             nThresh = nAvgInt + (nAvgInt*nP);
             mCutoutMask(mCutout < nThresh) = 0;
             mMask(vI(1):vI(2), vJ(1):vJ(2)) = mCutoutMask;
@@ -110,4 +113,3 @@ mMask = ~ismember(IL, ind);
 
 
 return
-

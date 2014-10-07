@@ -181,6 +181,21 @@ if isempty(eventdata)
         return;
     end
     
+    % Check if .bin file is part of a series
+    % i.e. contains an underscore followed by 3 numbers, eg. _001
+    if strcmp(datafile(end-3:end), '.bin')
+        if all(isstrprop(datafile(end-6:end-4), 'digit')) && (datafile(end-7) == '_')
+            sAns = questdlg(sprintf('%s is part of a series. Do you want to load all files, each as a separate trial?', datafile), ...
+                'Load .bin', 'Yes', 'No', 'Cancel', 'yes');
+            switch sAns
+                case 'Cancel'
+                    return;
+                case 'Yes'
+                    datafile = [datafile(1:end-7) '*.bin'];
+            end
+        end
+    end
+    
     cd(curdir); % return to original directory
     set(handles.data_filename, 'string', datafile);
     

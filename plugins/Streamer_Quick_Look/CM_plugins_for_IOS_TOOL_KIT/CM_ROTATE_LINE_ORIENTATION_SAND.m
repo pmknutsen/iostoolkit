@@ -23,7 +23,9 @@
 % FAT_LINE_AVG= wanted input
 
 
-function [FAT_LINE_AVG,Xnew,Ynew,rotated_Im]=CM_ROTATE_LINE_ORIENTATION_SAND(CX,CY,Im,thickness,display)
+function [FAT_LINE_AVG,Xnew,Ynew,rotated_Im]=CM_ROTATE_LINE_ORIENTATION_SAND(CX,CY,Im,thickness,display_on)
+CX_or=CX;
+CY_or=CY;
 
 CX=[CX(1) CX(end)]; % Extremities X of the line in original image
 CY=[CY(1) CY(end)]; % Extremities Y of the line in original image
@@ -48,11 +50,11 @@ Ynew=round(Ynew);
 FAT_LINE_AVG=rotated_Im(Ynew_ofs(1):Ynew_ofs(2),Xnew(1):Xnew(2));
 FAT_LINE_AVG=mean(FAT_LINE_AVG,1);
 
-if (display==1)    
+if (display_on==1)    
     figure (90)
     imagesc(Im);colormap (gray);axis 'equal'
     hold on
-    plot (CX_Before_ROT,CY_Before_ROT)
+    plot (CX_or,CY_or)
     hold off
     
     figure (91)

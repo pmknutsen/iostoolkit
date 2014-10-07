@@ -1,6 +1,6 @@
 function Streamer_QuickLook(hObject, eventdata, handles)
 % Streamer_QuickLook
-% 
+%
 %
 % Per M Knutsen <pmknutsen@gmail.com>
 % June 2014
@@ -39,20 +39,26 @@ T.sConfFile = sConfFile;
 cd(sPwd)
 
 % Load existing T from disk
+
 if T.bLoad
     if exist([T.sPath T.sFileName '.mat'], 'file')
         R = load([T.sPath T.sFileName '.mat'], 'T');
         disp(sprintf('Results loaded from %s', [T.sPath T.sFileName '.mat']))
         % Copy R.T into T without replacement
         csFields = fieldnames(R.T);
+        
         for f = 1:length(csFields)
             if ~isfield(T, csFields{f})
                 T.(csFields{f}) = R.T.(csFields{f});
             end
+            
+        end
+        if isfield(T, 'AA_proc')% CM 20140723 allows to not load AA_proc...
+            ...(done to allow proper initialisation of the graph)
+                T= rmfield(T,'AA_proc');
         end
     end
 end
-
 % Set first value in colormap to black
 T.mColMap = [0 0 0; T.mColMap];
 
@@ -63,7 +69,7 @@ T.mColMap = [0 0 0; T.mColMap];
 hFID = fopen([T.sPath T.sFileName '.txt']);
 if (hFID == -1), error('Failed opening settings file.'); end
 [cSettings, ~] = textscan(hFID, '%s');
-fclose(hFID);
+fclose(hFID)
 
 % Get acquisition settings
 mSettings = cSettings{1};
@@ -114,7 +120,7 @@ T.mBaseline = mBaselineSums ./ fi;
 % Note: It is assumed frame has equal width and height
 hWait = waitbar(0, 'Calculating radial intensity profiles...');
 
-T.nRadIntensityPxBin = 10;
+T.nRadIntensityPxBin = 8;
 T.vRadIntensity = [];
 
 mD = zeros(T.vVideoRes(1:2) / T.nRadIntensityPxBin);
@@ -131,7 +137,7 @@ for c = 1:T.nNumColChans
     end
     mD = mD - min(mD(:));
     vD = unique(mD(:))';
-
+    
     % Reduce resolution further by limiting radial steps
     nSteps = 100;
     vD = vD(unique(round(linspace(1, length(vD), nSteps))));
@@ -139,14 +145,14 @@ for c = 1:T.nNumColChans
     
     % Resize baseline image to match size of distance matrix
     mBaseline = imresize(T.mBaseline(:, :, c), size(mD));
-
+    
     % Compute average intensity value at each radial distance
     for i = 1:length(vD)
         if ~ishandle(hWait), break; end
         waitbar((i * c)/(length(vD) * T.nNumColChans), hWait)
         T.vRadIntensity(c, i) = mean(mBaseline(mD == vD(i)));
     end
-
+    
     % Fit gaussians to radial intensity profiles
     tOptions = statset('Display', 'off', 'MaxIter', 10, 'TolFun', 1e-2, 'TolX', 1e-4);
     fGaussFun = inline('b(1) .* (1/sqrt(2*pi)/b(3)*exp(-(x-b(2)).^2/2/b(3)/b(3)))', 'b', 'x');
@@ -155,10 +161,10 @@ for c = 1:T.nNumColChans
     vY = [T.vRadIntensity(c, :) T.vRadIntensity(c, :)];
     vY = vY - min(vY);
     vY = vY ./ max(vY);
-
+    
     vB = nlinfit(vX, vY, fGaussFun, [500 0 200], tOptions);
     %vYi = fGaussFun(vB, vX);
-
+    
     % Create radial mask
     mG = fspecial('gaussian', T.vVideoRes(1:2), vB(3));
     mG = mG ./ max(mG(:));
@@ -180,7 +186,9 @@ mA = double(ISI_readStreamer(FID, T.nSkipInitialFrames+1, T.vVideoRes));
 mA = mA - T.mRadIntensityMask(:, :, 1);
 mB = double(ISI_readStreamer(FID, T.nSkipInitialFrames+2, T.vVideoRes));
 mB = mB - T.mRadIntensityMask(:, :, 2);
-if std(mA(:)) > std(mB(:))
+if std(mA(:)) > std(mB(:)) % NORMAL :TO USE WHEN THE BLUE IMAGE IS MORE VARIABLE CELINE COMMENTED 20140802 TO CORRECT FOR cm_142 THAT HAD A VERY VARIANT RED IMAGE 
+%if std(mA(:)) < std(mB(:)) % EXOTIC CELINE TO USE WHEN THE BLUE IMAGE IS LESS VARIABLE CELINE COMMENTED 20140802 TO CORRECT FOR cm_142 THAT HAD A VERY VARIANT RED IMAGE 
+
     T.vChOrder = fliplr(T.vChOrder); % order is [red blue ...]
 end
 T.mBaseline = T.mBaseline(:, :, T.vChOrder);
@@ -199,7 +207,7 @@ set(T.hFrameSlider, 'value', (T.nSkipInitialFrames+1), ...
 set(T.hAx(end), 'xlim', [(T.nSkipInitialFrames+1) T.nVideoNumFrames]);
 
 T.hFrameLegend = text(2, 2, 'Frame 0', 'parent', T.hAx(1));
-set(T.hFrameLegend, 'units', 'normalized', 'position', [.02 .05]);
+set(T.hFrameLegend, 'units', 'normalized', 'position', [.06 .9 0],'Color',[1 1 0]); %[horiz,vert]changed by CM to get yellow frame number top left
 
 % Iterate over video frames
 vFrames = (T.nSkipInitialFrames+1):T.nVideoNumFrames;
@@ -223,10 +231,10 @@ while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
     T.f = vFrames(f);
     
     T.mFrame = double(ISI_readStreamer(FID, T.f, T.vVideoRes));
-
+    
     % Determine channel
     T.nCh = mod(T.f - 1, T.nNumColChans) + 1;
-
+    
     % Update circular frame buffer
     nCircIndx = mod(f-1, T.nCircBufferSize*T.nNumColChans) ./ T.nNumColChans + 1 ...
         - mod(f-1, T.nNumColChans) ./ T.nNumColChans;
@@ -239,7 +247,7 @@ while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
     % Display frame
     if T.bView && ishandle(T.hFig)
         set(T.hImg(T.vChOrder(T.nCh)), 'cdata', T.mFrame)
-
+        
         % Set axis limits
         vXlim = get(T.hAx(T.vChOrder(T.nCh)), 'xlim');
         if any(vXlim > size(T.mFrame))
@@ -247,7 +255,7 @@ while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
                 'xlim', [0 size(T.mFrame, 1)], ...
                 'ylim', [0 size(T.mFrame, 2)] );
         end
-    
+        
         % Update frame legend
         set(T.hFrameLegend, 'string', sprintf('Frame# %d', T.f))
         
@@ -257,9 +265,15 @@ while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
         % Update graphs
         if isfield(T, 'mGraphs')
             nStart = (T.nSkipInitialFrames) + T.nCh;
-            mYY = T.mGraphs(nStart:T.nNumColChans:end, T.nCh);
-            mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
+            %mYY = T.mGraphs(nStart:T.nNumColChans:end, T.nCh);
+            %mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
+            mYY = T.mGraphs(nStart:end, T.nCh);
+            mXX = nStart:size(T.mGraphs, 1);
+            iRem = isnan(mYY);
+            mYY(iRem) = [];
+            mXX(iRem) = [];
             set(T.hGraphs(T.nCh), 'xdata', mXX, 'ydata', mYY);
+            %set(get(T.hGraphs(T.nCh), 'parent'), 'color', 'none');
         end
     else
         % Display progress in command window

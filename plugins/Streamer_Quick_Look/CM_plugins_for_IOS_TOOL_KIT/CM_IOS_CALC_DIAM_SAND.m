@@ -1,9 +1,10 @@
 
 function [T]=CM_IOS_CALC_DIAM_SAND (T,thickness)
-To_init=~isfield(T,'AA_proc');% if it doesn't exist you have to create it and start calculating the diameter
+
+To_init=~isfield(T,'AA_proc'); % if it doesn't exist you have to create it and start calculating the diameter
 CST_MAX=length(T.AA);% AA contains the info necessary to measure the vessel diameter
 %%=T.AA(1).thickness;
- T.Dia_index=((((T.f-T.nSkipInitialFrames)+T.vChOrder(2))/2)-(T.vChOrder(2)-1));% CM_to fix with logic done
+T.Dia_index=((((T.f-T.nSkipInitialFrames)+T.vChOrder(2))/2)-(T.vChOrder(2)-1));% CM_to fix with logic done
 
 
 for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
@@ -14,7 +15,8 @@ for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
     [FAT_LINE_AVG,~,~,~]=CM_ROTATE_LINE_ORIENTATION_SAND(Xi_S,Yi_S,box_im,thickness,0);
     %FAT_DET=-detrend(FAT_LINE_AVG);
     FAT_DET=-FAT_LINE_AVG;
-    [dia_temp p1_vec_temp p2_vec_temp an_profile]= CM_calcFWHM(FAT_DET,1);
+    [dia_temp p1_vec_temp p2_vec_temp an_profile]= CM_calcFWHM(detrend(FAT_DET),1); % CELINE ADDED THE DETREND 20140803 TO COMPENSATE FOR UNSUFFICIENT IR IREGULAR RADIAL CORRECTION
+    
     if (To_init) % preallocate the data and set the data
         T.nb_of_blue_frames=floor((T.nVideoNumFrames-T.nSkipInitialFrames)/2);
         T.first_blue_frame=T.Dia_index;
@@ -34,32 +36,33 @@ for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
     T.AA_proc(CST).dia(T.Dia_index)=dia_temp;
     T.AA_proc(CST).p1_vec(T.Dia_index)=p1_vec_temp;
     T.AA_proc(CST).p2_vec(T.Dia_index)=p2_vec_temp;
-     T.mGraphs(T.f, T.nNumColChans+CST) =dia_temp;
-          
-     if T.bView && ishandle(T.hFig)
-         nStart = (T.nSkipInitialFrames) + T.nCh; %% NOT CLEAR
-         mYY = T.mGraphs(nStart:T.nNumColChans:end,T.nNumColChans+CST);
-         mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
-         set(T.hGraphs(T.nNumColChans+CST), 'xdata', mXX, 'ydata', mYY);
-         drawnow
-     end
-     
-        
-        
- end
+    T.mGraphs(T.f, T.nNumColChans+CST) =dia_temp;
+    
+    if T.bView && ishandle(T.hFig)
+        nStart = (T.nSkipInitialFrames) + T.nCh; %% NOT CLEAR
+        mYY = T.mGraphs(nStart:T.nNumColChans:end,T.nNumColChans+CST);
+        mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
+        set(T.hGraphs(T.nNumColChans+CST), 'xdata', mXX, 'ydata', mYY);
+        drawnow
+    end
+    
+    
+    
+end
 
 % CM_IOS_PLOT_LINES(AA_proc)
 % CM_IOS_PLOT_ALL_PROFILES(AA_proc)
 end
-% 
+%
 % function [T]=CM_IOS_PLOT_DIA(T)
 %  CST_MAX=length(T.AA_proc);
 % for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
 %     T.mGraphs(T.f, T.nNumColChans+CST) = nansum(T.mFrame(:));
 %     T.AA_proc(CST).dia(T.Dia_index)=dia_temp;
-% 
+%
 % end
 % end
+
 function [width point1 point2 data] = CM_calcFWHM(data,smoothing,threshold)
 data = double(data);
 % smooth data, if appropriate
@@ -86,8 +89,8 @@ end
 firstI = aboveI(1);                 % index of the first point above threshold
 lastI = aboveI(end);                % index of the last point above threshold
 
-if (firstI-1 < 1) | (lastI+1) > length(data) % interpolation would result in error, set width to zero and just return ...
-   
+if (firstI-1 < 1) || (lastI+1) > length(data) % interpolation would result in error, set width to zero and just return ...
+    
     width = 0;point1=0;point2=0;
     return
 end
@@ -109,25 +112,21 @@ figure (T.hFig);
 
 for i = 1:T.nNumColChans
     handle_num=T.hAx(T.nNumColChans+i);
-    set(handle_num,'position', [0 .25 1 .2]);
+    set(handle_num,'position', [0 .2  1 .2]);% sets the placement of the axis for IOS
 end
 mCols=varycolor(length(T.AA));
 %     mCols = [1 0 0; 0 0 1; 0 1 0; 1 0 1];
+T.hAx(end+1) = axes('position', [0 0.05 1 0.14]);% adds one axis to put all the diameters
+hold(T.hAx(end), 'on')
+%set(T.hAx(end), 'color', [1 1 1])
+set(T.hAx(end), 'color','none')
 
-    
-       
+
 for i = 1:length(T.AA)
-   
-    T.hAx(end+1) = axes('position', [0 .05 1 .2]);
-     if (i==1)
-          set(T.hAx(end), 'color', [1 1 1])
-    end
     T.hGraphs(end+1) = plot(T.hAx(end), nan, '-', 'color', mCols(i, :));
-    set(T.hAx(end), 'fontsize', 8, 'xcolor', mCols(i, :), 'ycolor', mCols(i, :), 'color', 'none');
+    set(T.hAx(end), 'fontsize', 8, 'xcolor', mCols(i, :), 'ycolor', mCols(i, :));
     set(T.hGraphs(end), 'xdata', 1:T.nVideoNumFrames, 'ydata', nan(T.nVideoNumFrames, 1));
     set(T.hAx(end), 'xlim', [(T.nSkipInitialFrames+1) T.nVideoNumFrames]);
-
-
 end
 %;
 
@@ -136,7 +135,7 @@ h = zoom;
 setAxesZoomMotion(h, T.hAx(T.nNumColChans+1:end), 'horizontal')
 
 return
-end 
+end
 
 function ColorSet=varycolor(NumberOfPlots)
 % VARYCOLOR Produces colors with maximum variation on plots with multiple

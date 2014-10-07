@@ -3,7 +3,7 @@
 % Xi_N=Xi_S+box_lim(3); Yi_N=Yi_N+box_lim(1);
 
 
-function CM_IOS_PLOT_LINES_SAND(STR_LINE)
+function CM_IOS_PLOT_LINES_SAND(STR_LINE,individual_images)
 %% PLOT FIGURE AND CALL IMPROFILE TO DEFINE THE BOX, TO DEFINE THE
 
 counter_max=length(STR_LINE);
@@ -12,8 +12,12 @@ if (counter_max<1)
     return
 else
     figure (134) % ALL LINES
+    set (134,'position',  [800   100   500   500]);gcf; %[left bottom width height]
+
     clf    
-    [AVG_image_to_display]=CM_SUBTRACT_BACKGROUND(STR_LINE(1).AVG_im,200,400,0);
+   % [AVG_image_to_display]=CM_SUBTRACT_BACKGROUND(STR_LINE(1).AVG_im,200,400,0);
+    [AVG_image_to_display]=STR_LINE(1).AVG_im;
+
     imagesc(AVG_image_to_display)
     
     hold on
@@ -24,14 +28,14 @@ else
         CX_T=STR_LINE(counter).Xi_S+STR_LINE(counter).box_lim(3);
         CY_T=STR_LINE(counter).Yi_S+STR_LINE(counter).box_lim(1);
         box_lim=STR_LINE(counter).box_lim;
-        [AVG_image_to_display]=CM_SUBTRACT_BACKGROUND(STR_LINE(counter).AVG_im,200,400,0);
+        %[AVG_image_to_display]=CM_SUBTRACT_BACKGROUND(STR_LINE(counter).AVG_im,200,400,0);
        box_im=AVG_image_to_display(box_lim(1):box_lim(2),box_lim(3):box_lim(4));
        figure (134) %IMAGE WITH ALL COLORED LINE
         plot (CX_T,CY_T,'Color',ColorSet(counter,:))
         text(CX_T(1),CY_T(1),['' num2str(counter)],...
             'HorizontalAlignment','right',...
             'FontSize',12,'Color',ColorSet(counter,:))
-       
+       if(individual_images)
         figure (135+counter)%INDIVIDUAL IMAGE FOR EACH LINE 
         subplot(1,2,1)
         imagesc(box_im)
@@ -48,7 +52,7 @@ else
         title(['LINE NUMBER ' num2str(counter)])
         
         hold off
-        
+       end
     end
     figure(134)
     hold off

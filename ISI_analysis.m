@@ -1,17 +1,7 @@
 function [prmts, ISIdata] = ISI_analysis(prmts)
 % [prmts,ISIdata] = ISI_analysis(prmts)   
 % Main function for IOS analysis.
-
-
-%  modified from Pablo Blinder, ISI_analysis_trialBased.m
-%  M.Pesavento 2010.12.30
-%
-% 2011.07.04 mjp changed from script to function, removed multifile
-%           specifications, cleaned up function calls
-%
-% 2012.02.02 Per Magne Knutsen
-%            Change to transition all functions to be called from GUI.
-% 2012.04.03 Added manual mask. PMK
+% 
 %
 
 sColMap = 'gray';
@@ -46,6 +36,7 @@ end
 
 % Cycle through files
 for iFile = 1 : numel(prmts.filesQueue)
+
     % Get data from GUI, if already set
     hGUI = findobj('Tag', 'ISIanalysisGUI_fig');
     tUserData = get(hGUI, 'UserData');
@@ -86,11 +77,17 @@ for iFile = 1 : numel(prmts.filesQueue)
     if ~prmts.filesQueue.DoAnalyze
         return
     end
-        
+    
     ISIdata.climAll = prmts.filesQueue(iFile).climAll ./ 1000;
     
-    % Get the average frame over stimulus interval, suppressing the comparison figure
-    signalFrame = getISIsignalframe(ISIdata, prmts.filesQueue(iFile).stimInterval, 0);
+    % Get the average frame over stimulus interval
+    if get(findobj('tag', 'chk_writesigframe'), 'value')
+        % Plot the average signal frame
+        signalFrame = ISI_getSignalFrame(ISIdata, prmts.filesQueue(iFile), 1);
+    else   
+        % Suppress plot
+        signalFrame = ISI_getSignalFrame(ISIdata, prmts.filesQueue(iFile), 0);
+    end
     
     % Plot and save all frames
     if (prmts.saveFigAll)
@@ -107,7 +104,6 @@ for iFile = 1 : numel(prmts.filesQueue)
     
     % Plot trial-average signal of ROI across time
     if prmts.filesQueue(iFile).selectSignalROI
-        %ISI_plotContourByTime(ISIdata, prmts.filesQueue(iFile), sColMap);
         ISIdata = ISI_selectSignalROI(ISIdata, prmts.filesQueue(iFile), sColMap);
         if isfield(ISIdata, 'analysisSignalROI')
             ISI_plotSignalByTime(ISIdata, prmts.filesQueue(iFile), sColMap);
@@ -124,35 +120,19 @@ for iFile = 1 : numel(prmts.filesQueue)
     
     % Isolate barrel
     if prmts.filesQueue(iFile).runBarrelFinder
-        % Create vessel mask
-        vesselfile=fullfile(prmts.filesQueue(iFile).path2dir, prmts.filesQueue(iFile).refImage);
-        vthresh=prmts.filesQueue(iFile).maskthresh;
-        
-        if ~prmts.useVesselMask || ~exist(vesselfile,'file')
-            vmask = ones(ISIdata.frameSizeYX);
-        else
-            vmask = imread(vesselfile);
-            vmask = mat2gray(vmask); %don't really need to normalize, but do it for clarity
-            vmask = im2bw(vmask,vthresh);
-        end
-        ISIdata.vesselmask = vmask;
+        ISIdata.vesselmask = ISI_createVesselMask(prmts);
         
         % Select contour for barrel
         ISIdata = ISI_isolateBarrel(ISIdata, signalFrame, prmts.filesQueue(iFile),prmts.saveFig);
         drawnow;
     end
 
-    % Generate moving average movie of averaged trials and for all frames
+    % Generate AVI movie from loaded data file
     if prmts.saveMovie
-        %create movie of averaged trials
         ISIdata = ISI_writeMovie(ISIdata, prmts.filesQueue(iFile));
-        %ISIdata = ISI_averageTrialsMovingAverage(ISIdata, prmts.filesQueue(iFile));
-        %creates full movie of all trials
-        %ISIdata = ISI_TrialMovingAverage(ISIdata,prmts.filesQueue(iFile));
-    end    
+    end
     
-    
-    % save mat file  
+    % Save mat file  
     drawnow; % update the figures before saving the mat file
     pause(0.01);
     savefilename = fullfile(prmts.filesQueue(iFile).path2dir,prmts.filesQueue(iFile).name);

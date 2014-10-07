@@ -1,50 +1,71 @@
-function idx = ISI_selectContour(XdataLowest,YdataLowest,prmtsCurrent,dipIm, contour_level)
-%label each of the contour lines and let user select by chosing from dialog
+function idx = ISI_selectContour(XdataLowest, YdataLowest, prmts, dipIm, contour_level, hAx)
+% Plot and label contour lines onto image
+%
+% This function is called by ISI_plotAllFrames
+%
+%
 
+imRef = imread(fullfile(prmts.path2dir, prmts.refImage));
 
-imRef = imread(fullfile(prmtsCurrent.path2dir,prmtsCurrent.refImage));
+% Mask image with a user-define ROI
+if prmts.useManualMask
+    tMask = prmts.manualMask;
+    if ~isempty(tMask)
+        imRef(~tMask.mROI) = NaN;
+    end
+end
 
+if ishandle(hAx)
+    hFig = get(hAx, 'parent');
+    cla(hAx); % clear the axis
+else
+    % Create a new figure and axis if none was passed
+    hFig = figure('Name', 'Select contour');
+    hAx = subplot(1, 1, 1);
+end
 
-h2RoiSelect = figure('Name','Select Isolated barrel');
-%Compute size difference between filtered "dip" image and reference
+% Compute size difference between filtered "dip" image and reference
 [deltaRC] = size(imRef) - size(dipIm);
 deltaR = fix(deltaRC(1)/2);
 deltaC = fix(deltaRC(2)/2);
-imshow(imRef)
-axis image
-hold on
 
-%% create region for each 
+imshow(imRef, 'parent', hAx)
+axis(hAx, 'image')
+hold(hAx, 'on')
+
+% Plot each contour
 nROI = numel(XdataLowest);
 str = cell(nROI+1,1);
 for iROI = 1 : nROI
     x =  XdataLowest{iROI}+deltaR;
     y = YdataLowest{iROI}+deltaC;
-    plot(x,y,'b-','LineWidth',2)
-    text(mean(x(~isnan(x))),mean(y(~isnan(y))),num2str(iROI),'color','r','fontSize',12);
+    plot(hAx, x, y, 'b-', 'LineWidth', 2)
+    text(mean(x(~isnan(x))),mean(y(~isnan(y))), num2str(iROI), ...
+        'color', 'r', 'fontsize', 12, 'parent', hAx);
     str{iROI} = num2str(iROI);
 end
 str{end} = 'None';
-title(['Contour= ' num2str(contour_level)]);
+title(['Contour = ' num2str(contour_level)]);
 
-%% list dialog 
+% Display the list dialog next to the figure
+vPos = get(hFig, 'position');
+vPos = [vPos(1)+vPos(3) vPos(2)+vPos(4) 192 386];
 
-cpos=get(h2RoiSelect,'position'); %contour fig position
-figpos=[cpos(1)+cpos(3) cpos(2)+cpos(4) 192 386];
+[idx] = showlistbox('ListString', str, ...
+    'PromptString', 'Select ROI', ...
+    'Position', vPos, ...
+    'initialvalue', length(str) );
 
-[idx]=showlistbox('ListString',str,'PromptString','Select ROI',...
-    'position',figpos,'initialvalue',length(str));
+% If user selected None, then set idx to -1
+if idx == nROI + 1
+    idx = -1;
+end
 
-
-if idx == nROI + 1; idx = -1;end %user selecte None -> set idx to -1
 if isempty(idx)
     error('ISI_isolateBarrel: cancelled contour selection');
 end
 
-%% clean up
-close(h2RoiSelect)
-
-
+return
 
 
 
@@ -72,11 +93,11 @@ function [selection, value]=showlistbox(varargin)
 %   'InitialValue'  vector of indices of which items of the list box
 %                   are initially selected; defaults to the first item.
 %   'Name'          String for the figure's title; defaults to ''.
-%   'PromptString'  string matrix or cell array of strings which appears 
+%   'PromptString'  string matrix or cell array of strings which appears
 %                   as text above the list box; defaults to {}.
 %   'OKString'      string for the OK button; defaults to 'OK'.
 %   'CancelString'  string for the Cancel button; defaults to 'Cancel'.
-%   'Position'      [left bottom width height], bases the actual 
+%   'Position'      [left bottom width height], bases the actual
 %                   width & height on ListSize, default vals are w=192,h=386
 %
 %mjp 2011.09.30     a lot of the code is borrowed directly from listdlg
@@ -105,23 +126,23 @@ if mod(length(varargin),2) ~= 0
 end
 for i=1:2:length(varargin)
     switch lower(varargin{i})
-     case 'name'
-      figname = varargin{i+1};
-     case 'promptstring'
-      promptstring = varargin{i+1};
-     case 'listsize'
-      listsize = varargin{i+1};
-     case 'liststring'
-      liststring = varargin{i+1};
-     case 'initialvalue'
-      initialvalue = varargin{i+1};
-     case 'position'
-      newfp = varargin{i+1}; %taking initial left and bottom
-      %default w=192, h=386
-      fp = [newfp(1) newfp(2)+fp(4)-h w h];  % keep upper left corner fixed
+        case 'name'
+            figname = varargin{i+1};
+        case 'promptstring'
+            promptstring = varargin{i+1};
+        case 'listsize'
+            listsize = varargin{i+1};
+        case 'liststring'
+            liststring = varargin{i+1};
+        case 'initialvalue'
+            initialvalue = varargin{i+1};
+        case 'position'
+            newfp = varargin{i+1}; %taking initial left and bottom
+            %default w=192, h=386
+            fp = [newfp(1) newfp(2)+fp(4)-h w h];  % keep upper left corner fixed
     end
 end
-    
+
 %set defaults
 if isempty(liststring)
     error('showlistbox:NeedParameter', 'ListString parameter is required.')
@@ -130,7 +151,7 @@ if isempty(initialvalue)
     initialvalue = 1;
 end
 if ischar(promptstring)
-    promptstring = cellstr(promptstring); 
+    promptstring = cellstr(promptstring);
 end
 
 fig_props = { ...
@@ -144,7 +165,7 @@ fig_props = { ...
     'createfcn'              ''    ...
     'position'               fp   ...
     'closerequestfcn'        'delete(gcbf)' ...
-            };
+    };
 
 liststring=cellstr(liststring);
 fig = figure(fig_props{:});
@@ -156,21 +177,21 @@ if ~isempty(promptstring)
 end
 btn_wid = (fp(3)-2*(ffs+fus)-fus)/2;
 listbox = uicontrol('style','listbox',...
-                    'position',[ffs+fus ffs+uh+4*fus listsize],...
-                    'string',liststring,...
-                    'backgroundcolor','w',...
-                    'max',2,... %allows multiple selection
-                    'tag','listbox',...
-                    'value',initialvalue, ...
-                    'callback', {@doListboxClick});
+    'position',[ffs+fus ffs+uh+4*fus listsize],...
+    'string',liststring,...
+    'backgroundcolor','w',...
+    'max',2,... %allows multiple selection
+    'tag','listbox',...
+    'value',initialvalue, ...
+    'callback', {@doListboxClick});
 ok_btn = uicontrol('style','pushbutton',...
-                   'string',okstring,...
-                   'position',[ffs+fus ffs+fus btn_wid uh],...
-                   'callback',{@doOK,listbox});
+    'string',okstring,...
+    'position',[ffs+fus ffs+fus btn_wid uh],...
+    'callback',{@doOK,listbox});
 cancel_btn = uicontrol('style','pushbutton',...
-                       'string',cancelstring,...
-                       'position',[ffs+2*fus+btn_wid ffs+fus btn_wid uh],...
-                       'callback',{@doCancel,listbox});
+    'string',cancelstring,...
+    'position',[ffs+2*fus+btn_wid ffs+fus btn_wid uh],...
+    'callback',{@doCancel,listbox});
 
 set([fig, ok_btn, cancel_btn, listbox], 'keypressfcn', {@doKeypress, listbox});
 % make sure we are on screen
@@ -202,8 +223,8 @@ end
 %% figure, OK and Cancel KeyPressFcn
 function doKeypress(src, evd, listbox) %#ok
 switch evd.Key
- case 'escape'
-  doCancel([],[],listbox);
+    case 'escape'
+        doCancel([],[],listbox);
 end
 
 %% OK callback

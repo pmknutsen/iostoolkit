@@ -28,7 +28,7 @@ function varargout = ISI_analysisGUI(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % 
 
-% Last Modified by GUIDE v2.5 22-Jan-2014 11:12:07
+% Last Modified by GUIDE v2.5 30-Sep-2014 15:22:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -139,7 +139,7 @@ if curpath==0, curpath=pwd; end %cancelled out
 set(handles.path,'string',curpath);
 handles.pathstr=curpath;
 guidata(hObject, handles);
-
+return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function data_filename_Callback(hObject, eventdata, handles)  %#ok
@@ -152,7 +152,7 @@ else
     set(handles.whiskername,'string',name{1});
 end
 guidata(hObject, handles);
-
+return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Executes during object creation, after setting all properties.
@@ -160,10 +160,13 @@ function data_filename_CreateFcn(hObject, eventdata, handles)  %#ok
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Executes on button press in getdatafile.
 function getdatafile_Callback(hObject, eventdata, handles)
+% Select an IOS file to load
+% 
+%
 
 if isempty(eventdata)
     curdir = pwd;
@@ -183,7 +186,7 @@ if isempty(eventdata)
     
     % Update path to selected file
     set(handles.path,'string', path2file);
-    handles.pathstr =path2file;
+    handles.pathstr = path2file;
 else
     % Use passed file name passed as function argument
     datafile = eventdata;
@@ -196,7 +199,6 @@ sWhiskerID = regexp(datafile, '(.+)_\w{6}.dat', 'tokens');
 if ~isempty(sWhiskerID)
     set(handles.whiskername,'string', sWhiskerID{1});
 else
-    warndlg('Could not find whisker name. Please enter it manually.', 'IOSToolkit');
     set(handles.whiskername, 'string', 'Unknown');
 end
 
@@ -207,6 +209,10 @@ set(hGUI, 'UserData', [])
 
 % Since a file was selected manually, uncheck the 'Process all files' checkbox
 set(handles.process_all_files, 'value', 0)
+
+% Load previously saved settings, if they exist on disk
+LoadGUIState(handles)
+
 return
 
 
@@ -342,7 +348,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a structure of parameters used for analysis
 % Most parameters are read from the GUI handles/objects
-function tParams = GetParams(hObject, eventdata, handles)
+function tParams = GetParams(handles)
 
 % General parameters
 tParams.useVesselMask   = get(handles.chk_vesselmask, 'value');
@@ -487,10 +493,11 @@ return
 % Execute Analysis.
 % Scrape the form, create the param struct and pass it to the ISI_analysis
 % function.
-%
+% 
 % We need to stack the structs, because ISI_analysis expects a struct
 % containing an array of file parameter structs. We are only running one
 % file at a time, so we just have the filesQueue struct within setParams
+%
 function btn_run_Callback(hObject, eventdata, handles)
 
 % Iterate over files
@@ -513,7 +520,7 @@ else
     nLoop = 1;
 end
 
-% Iterate over files
+% Iterate over file(s)
 % Usually, only the selected file is processed unless the 'Process all'
 % option is checked in the GUI
 for nFi = 1:nLoop
@@ -527,14 +534,19 @@ for nFi = 1:nLoop
         end
         if ishandle(hWait)
             waitbar(nFi/length(sFileList), hWait);
-        else break; end
+        else
+            break
+        end
     end
     
     % Save all GUI settings and associate _settings.mat file current .dat file
-    SaveGUIState(handles)
+    % Note: Don't save if we are processing multiple files
+    if ~isstruct(sFileList)
+        SaveGUIState(handles)
+    end
     
     % Seed the parameters structure with default and GUI values
-    setParams = GetParams(hObject, eventdata, handles);
+    setParams = GetParams(handles);
 
     % Decide actions (Load, Average and/or Analyse)
     setParams = GetActions(hObject, eventdata, handles, setParams);
@@ -548,7 +560,6 @@ for nFi = 1:nLoop
             'Oops.');
         break;
     end
-    
 end
 
 % Close waitbar
@@ -568,13 +579,10 @@ return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Executes on button press in btn_viewmask.
-function btn_viewmask_Callback(hObject, eventdata, handles) %#ok
-if isempty(get(handles.vessel_filename,'string'))
-    warndlg('No vessel filename given');
-else
-    ISI_viewMask(fullfile(handles.pathstr, get(handles.vessel_filename,'string')),...
-        str2double(get(handles.maskthresh,'string')));
-end
+function btn_viewmask_Callback(hObject, eventdata, handles)
+
+ISI_viewMask(handles);
+
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -677,9 +685,13 @@ return
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Run plugin from pop-up menu
 function popup_plugins_Callback(hObject, eventdata, handles)
+
+hGUIFig = findobj('tag', 'ISIanalysisGUI_fig');
+
 % Run selected plugin
 sPlugin = get(hObject, 'string');
 sPluginId = get(hObject,'value');
+
 % Get plugin path
 sPwd = pwd;
 sPath = mfilename('fullpath');
@@ -690,13 +702,13 @@ sPath = [sPath(1:vIndx(end)) 'plugins' filesep sPlugin{sPluginId} filesep];
 addpath(sPath)
 
 % Remove axes that were drawn into the GUI window
-delete(findobj(gcf, 'type', 'axes'))
+delete(findobj(hGUIFig, 'type', 'axes'))
 
 % Run plugin
 eval(sprintf('%s(hObject, eventdata, handles);',sPlugin{sPluginId}))
 
 % Remove axes that were drawn into the GUI window
-delete(findobj(gcf, 'type', 'axes'))
+delete(findobj(hGUIFig, 'type', 'axes'))
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -761,19 +773,38 @@ end
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Executes on button press in btn_activitymonitor.
-function btn_activitymonitor_Callback(hObject, eventdata, handles)
+function ISIdata = GetISIData(handles)
+% Get the loaded ISI data
 
-% Get data from GUI, if already set
 hGUI = findobj('Tag', 'ISIanalysisGUI_fig');
 tUserData = get(hGUI, 'UserData');
+
+% tUserData is empty, try to load data
 ISIdata = [];
-if ~isempty(tUserData)
+if isempty(tUserData)
+    tParams = GetParams(handles);
+    tParams.filesQueue.DoLoad = 1;
+    ISIdata = ISI_read(tParams.filesQueue);
+    set(hGUI, 'UserData', ISIdata)
+else
     if isfield(tUserData, 'frameStack')
         ISIdata = tUserData;
     end
 end
-if isempty(ISIdata), warndlg('You must first load a .dat file', 'ISI Analysis'); return, end
+
+return
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Executes on button press in btn_activitymonitor.
+function btn_activitymonitor_Callback(hObject, eventdata, handles)
+
+% Get data from GUI, if already set
+ISIdata = GetISIData(handles);
+
+if isempty(ISIdata)
+    warndlg('You must first load a .dat file', 'IOS Toolkit');
+    return
+end
 
 % Produce an average of all frames in a single movie
 % use this to look for motion artefacts within single trials
@@ -827,8 +858,13 @@ end
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Save state of GUI
 function SaveGUIState(handles)
+% Save values of all GUI input fields
+%
+% TODO
+%   Don't save settings when we are batch processing? ie. we want to avoid
+%   overwriting settings when we are batch processing.
+%
 vChild = findobj(handles.ISIanalysisGUI_fig);
 cExceptions = {'ISIanalysisGUI_fig'}; % tags of handles that should not be saved
 tState = struct([]);
@@ -891,4 +927,15 @@ for t = 1:length(csFieldnames)
     end
 end
 guidata(handles.ISIanalysisGUI_fig, handles);
+return
+
+
+% Callback when lower clim is updated
+function climinterval_lo_Callback(hObject, eventdata, handles)
+
+nCLimLowVal = str2num(get(hObject, 'string'));
+nCLimHiVal = abs(nCLimLowVal);
+
+set(findobj(get(hObject, 'parent'), 'tag', 'climinterval_hi'), 'string', num2str(nCLimHiVal))
+
 return

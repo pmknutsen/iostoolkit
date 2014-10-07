@@ -1,95 +1,79 @@
-function ISI_viewMask(sFilename, thresh)
-% View the mask on top of the original vessel file
+function ISI_viewMask(handles)
+% View the masks over the vessel image
+%
+% Only the selected masks are displayed, ie. vessel or manual masks or the
+% combination of both
+%
 % Ssed to compare actual coverage, see what areas are being masked out.
+%
 
-if nargin==0
-    sVesselFile = fullfile(basepath, subpath,sFilename);
-    thresh = 0.45;
-else
-    sVesselFile = sFilename;
+global ISI
+
+% Get current parameters
+tParams = ISI.GetParams(handles);
+tParams = tParams.filesQueue(1);
+
+% Load vessel image
+sFilename = fullfile(handles.pathstr, get(handles.vessel_filename,'string'));
+
+if ~exist(sFilename, 'file')
+    warndlg('Vessel image not found.', 'IOS Toolkit');
+    return
 end
 
-vthresh = thresh;
+mVesselImgOrig = imread(sFilename);
+mVesselImg = mat2gray(mVesselImgOrig);
 
-nScale = 1;
+% Get vessel mask
+mVesselMask = ISI_createVesselMask(handles);
+mVesselImg(~mVesselMask) = NaN;
+mMask = mVesselMask;
 
-mVesselImg = imread(sVesselFile);
-mVesselImg = imresize(mVesselImg, nScale, 'bicubic');
-mVesselImgOrig = mVesselImg;
-mVesselImg = mat2gray(mVesselImg); %don't really need to normalize, but do it for clarity
-
-% smooth
-nSigma = str2double(get(findobj(findobj('tag', 'ISIanalysisGUI_fig'), 'tag', 'smooth_sigma'), 'string'));
-if isnumeric(nSigma) && ~isempty(nSigma) && ~isnan(nSigma)
-    mWin = fspecial('gaussian', nSigma*3, nSigma);
-    mVesselImg = single(filter2(mWin, mVesselImg, 'same'));
-end
-
-
-% subtract a centered gaussian
-mWin = gausswin(size(mVesselImg, 1)) * gausswin(size(mVesselImg,2))';
-
-mVesselImg = mVesselImg - mWin./(4./median(mVesselImg(:)));
-
-% remove zeros and ones
-mVesselImg(mVesselImg == 0) = NaN;
-mVesselImg(mVesselImg == 1) = NaN;
-
-% drop 5% percentile, both ends
-vMinMax = prctile(mVesselImg(:), [1 99]);
-
-% normalize image
-%mVesselImg(mVesselImg <= vMinMax(1)) = NaN;
-%mVesselImg(mVesselImg >= vMinMax(2)) = NaN;
-%mVesselImg = mVesselImg - vMinMax(1);
-%mVesselImg = mVesselImg ./ max(mVesselImg(:));
-
-
-% Apply manual mask if it exists (check GUI)
-hBtn = findobj('Tag', 'btn_setmanualmask'); % handle to 'Set' button
-if ishandle(hBtn)
-    tMask = get(hBtn, 'UserData');
+% Get manual mask
+if tParams.useManualMask
+    tMask = tParams.manualMask;
     if ~isempty(tMask)
-        tMask.mROI = imresize(tMask.mROI, nScale, 'nearest');
         mVesselImg(~tMask.mROI) = NaN;
+        mMask = mMask | tMask.mROI;
     end
 end
 
+% Remove zeros and ones
+mVesselImg(mVesselImg == 0) = NaN;
+mVesselImg(mVesselImg == 1) = NaN;
 
-vmask = im2bw(mVesselImg, vthresh);
-
-vmaskrgb = repmat(vmask, [1 1 3]);
-vmaskrgb(:,:,2:3) = 0;
-
-% TODO:
-% Single white dots surrounded by only black dots become black
-% Single black dots surrounded by only black dots become white
-
-
+% Initialize figure
 hFig = findobj('tag', 'ISI_maskPreview');
 if isempty(hFig)
-    hFig = figure;
+    hFig = figure('visible', 'off');
     set(hFig, 'tag', 'ISI_maskPreview')
 else
     figure(hFig)
 end
+set(hFig, 'position', [1 1 750 400])
+centerfig(hFig)
+set(hFig, 'visible', 'on')
 
-subplot(1,3,1)
+% Original image
+hAx = subplot(1,3,1);
 imagesc(mVesselImgOrig);
-axis image off;
+axis(hAx, 'image', 'off');
 title('Original')
+colormap(hAx, gray(256))
 
-subplot(1,3,2)
-imagesc(vmask);
-axis image off;
-title(['Mask threshold = ' num2str(thresh)]);
+% Mask
+hAx = subplot(1,3,2);
+imagesc(mMask);
+axis(hAx, 'image', 'off');
+title('Mask');
 
-subplot(1,3,3)
+% Masked image
+hAx = subplot(1,3,3);
 hv = imshow(mVesselImg);  
-axis image; hold on;
-hmask = imshow(vmask);
-set(hmask,'alphadata', 0.3, 'CData', vmaskrgb);
-title('Overlay')
-hold off
+axis(hAx, 'image', 'off');
+hold(hAx, 'on')
+hmask = imshow(mMask);
+set(hmask,'alphadata', 0.3, 'CData', mMask);
+title('Masked image')
 
 return

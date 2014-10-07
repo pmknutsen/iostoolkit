@@ -212,6 +212,12 @@ for i = 1:length(cMaskMap)
     if nL < 0
         mGM(:, 1:abs(nL)) = [];
     end
+    if nD < 0
+        mGM(1:abs(nD), :) = [];
+    end
+    if nU < 0
+        mGM(1:abs(nU), :) = [];
+    end
     
     mMap = mMap .* mGM;
     

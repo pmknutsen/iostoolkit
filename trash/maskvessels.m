@@ -1,4 +1,4 @@
-function imgmask=maskvessels(filename, thresh)
+function imgmask = maskvessels(filename, thresh)
 % imgmask=maskvessels(filename, thresh)
 % create mask of vasculature from image filename, 
 %  using default threshold of 0.5 if none passed in

@@ -107,7 +107,11 @@ end
 
 for f = vFrames
     fseek(hFID, (f-1) * nFrameBytes, -1); % does this slow things down?
-    mFrames(:, :, vFrames == f) = fread(hFID, vResolution(1:2), sType);
+    try
+        mFrames(:, :, vFrames == f) = fread(hFID, vResolution(1:2), sType);
+    catch mExcep
+        error('Failed assigning frame. May have reached end of file...')
+    end
 end
 
 if ~isnumeric(sFile)

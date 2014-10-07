@@ -11,7 +11,7 @@ persistent p_tROI
 % Display reference image and let user select ROI for analysis.
 if ~isfield(ISIdata, 'signalFrame')
     % Get the average frame over stimulus interval, suppressing the comparison figure
-    ISIdata.signalFrame = getISIsignalframe(ISIdata, prmts.stimInterval, 0);
+    ISIdata.signalFrame = ISI_getSignalFrame(ISIdata, prmts.stimInterval, 0);
 end
 mFrame = ISIdata.signalFrame;
 mWin = ones(prmts.imgBin);

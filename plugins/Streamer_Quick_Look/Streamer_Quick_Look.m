@@ -63,7 +63,7 @@ T.mColMap = [0 0 0; T.mColMap];
 hFID = fopen([T.sPath T.sFileName '.txt']);
 if (hFID == -1), error('Failed opening settings file.'); end
 [cSettings, ~] = textscan(hFID, '%s');
-fclose(hFID)
+fclose(hFID);
 
 % Get acquisition settings
 mSettings = cSettings{1};

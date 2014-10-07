@@ -15,14 +15,15 @@ function [ISIdata] = ISI_read(prmts)
 %  02/02/12 Modified to allow pixel binning during file read. PMK
 %  02/10/12 Fixed reading files on Linux. PMK
 %  03/26/12 Fixed reading files with non-integer trial durations. PMK
+%
 
 % Open file
 ISIdata = [];
-path2file = fullfile(prmts.path2dir,prmts.name);
-fid = fopen(path2file);
-if fid==-1
-    error(['Failed to open ' path2file]);
-    return;
+sFilepath = fullfile(prmts.path2dir, prmts.name);
+fid = fopen(sFilepath);
+if fid == -1
+    error(['Failed to open ' sFilepath]);
+    return
 end
 
 % Get file size
@@ -74,13 +75,21 @@ end
 
 fseek(fid, 25-4, 0);
 
-hWait = waitbar(0,'Loading frames...');
+hFig = findobj('Tag', 'ISIanalysisGUI_fig'); % ensure function can stil be run w/o GUI
+hWait = waitbar(0,'Loading frames...', 'visible', 'off');
+if ~isempty(hFig)
+    centerfig(hWait, hFig);
+end
+set(hWait, 'visible', 'on')
 
-h2fig = findobj('Tag', 'ISIanalysisGUI_fig');%ensure function can stil be run w/o GUI
-if ~isempty(h2fig);centerfig(hWait, h2fig);end
-drawnow;
+try % may fail with Out of Memory error if file is large
+    ISIdata.frameStack = cell(ntrials,(nsec*(frame_rate/bin_duration)));
+catch mExcep
+    warndlg('Failed to load datafile. This file may be too large. Although all analysis methods require the entire file to be loaded into memory, you may still process this file with any of the available plug-in scripts.');
+    close(hWait)
+    return
+end
 
-ISIdata.frameStack = cell(ntrials,(nsec*(frame_rate/bin_duration)));
 size(ISIdata.frameStack);
 for k = 1:ntrials
     % Read trial header

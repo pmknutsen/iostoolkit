@@ -8,12 +8,7 @@ function ISIdata = ISI_writeMovie(ISIdata,prmts)
 % and ISI_trialsMovingAverage(), which repeat analysis and do so in a
 % different manner than what is done in ISI_calc_dRR
 %
-
-% Changelog:
-%  11/11/11 Adapted from original code by Patrick Drew & Pablo Blinder. MJP
-%  03/23/12 Fixed saving AVIs, which was broken. PMK
-%  03/23/12 Added option to smooth frames. PMK
-%  03/23/12 Frames are now saved in true size. PMK
+%
 
 if ~isfield(ISIdata,'deltaSignal')
     error('deltaSignal does not exist');
@@ -24,21 +19,21 @@ set(hmovie,'DoubleBuffer','on');
 set(gca,'xlim',[1 ISIdata.frameSizeYX(2)],'ylim',[1 ISIdata.frameSizeYX(1)],...
     'NextPlot','replace','Visible','off');
 colormap(gray);
+
 mvi = 0; % frame counter for movie
-clear MOVIE ;
+clear MOVIE;
 secperbin=ISIdata.bin_duration/ISIdata.frame_rate;
 
-% mjp 2010.12.16 fixes crash on filename
-filename = fullfile(prmts.path2dir,prmts.name);
-[path,name,ext] = fileparts(filename);
+sFilename = fullfile(prmts.path2dir,prmts.name);
+[path, name, ext] = fileparts(sFilename);
 if ~strcmpi(ext,'.avi')
-    k=strfind(filename,ext);
+    k=strfind(sFilename,ext);
     if ~isempty(k)
-        filename=strcat(filename(1:k(end)-1),'.avi');
+        sFilename=strcat(sFilename(1:k(end)-1),'.avi');
     end
 end
 if isempty(ext)
-    filename = strcat(filename,'.avi');
+    sFilename = strcat(sFilename,'.avi');
 end
 
 mSize = [];
@@ -94,7 +89,7 @@ for f  = 1:length(MOVIE)
 end
 
 try
-    movie2avi(MOVIE, filename)
+    movie2avi(MOVIE, sFilename)
 catch ME
     avimov = close(avimov);
     error(ME.message);

@@ -108,19 +108,27 @@ else
     cMaskMap = cell({});
     cMap = cell({});
     bHaveData = false;
-    for i = 1:length(sList)
-        [mMaskMap, mMap] = GetIOSPeak(sList(i).name, nThresh);
-        if isempty(mMaskMap), continue; end
-        cMaskMap{end+1} = mMaskMap;
-        cMap{end+1} = mMap;
-        if ~exist('sListUse')
-            sListUse = sList(i);
-        else
-            sListUse(end+1) = sList(i);
-        end
-        bHaveData = true;
-    end
 
+    i = 1;
+    while i <= length(sList)
+        [mMaskMap, mMap] = GetIOSPeak(sList(i).name, nThresh);
+        hFig = findobj('tag', 'map_barrels_mark_ios_region');
+        if mMaskMap == 1 % repeat previous trial
+            i = i - 2;
+        else
+            i = i + 1;
+            if isempty(mMaskMap), continue; end
+            cMaskMap{end+1} = mMaskMap;
+            cMap{end+1} = mMap;
+            if ~exist('sListUse')
+                sListUse = sList(i);
+            else
+                sListUse(end+1) = sList(i);
+            end
+            bHaveData = true;
+        end
+    end
+    
     if ~bHaveData
         error('No data found in current IOS folder')
     end
@@ -164,7 +172,8 @@ mMaskMapAll = zeros(size(cMaskMap{1}));
 mIdentityMap = zeros(size(cMaskMap{1}));
 vY = []; vX = []; cTxt = cell({});
 for i = 1:length(cMaskMap)
-    if any(strcmp(sList(i).name(1:end-4), cExclude))
+    if any(strcmp(sList(i).name(1:end-4), cExclude)) ...
+        || any(strcmp(sList(i).name(1:end-13), cExclude))
         continue
     end
     %mMap = cMap{i};
@@ -236,6 +245,7 @@ for i = 1:length(cMaskMap)
     vX(end+1) = nX;
     vY(end+1) = nY;
     cTxt{end+1} = sList(i).name(1:2);
+    %cTxt{end+1} = sList(i).name(1:9);
 end
 
 % Add combined maps to tMaps
@@ -454,6 +464,7 @@ sNewPath = fullfile(sPath, 'Map_Barrels_Results');
 if ~exist(sNewPath, 'dir')
     mkdir(sPath, 'Map_Barrels_Results')
 end
+
 hWait = waitbar(.1, 'Exporting figures to disk...');
 % save .fig
 saveas(hMainFig, fullfile(sNewPath, 'MapBarrelsResult'), 'fig'); waitbar(.2, hWait)

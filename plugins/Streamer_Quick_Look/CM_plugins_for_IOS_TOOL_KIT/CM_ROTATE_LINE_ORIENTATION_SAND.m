@@ -24,38 +24,39 @@
 
 
 function [FAT_LINE_AVG,Xnew,Ynew,rotated_Im]=CM_ROTATE_LINE_ORIENTATION_SAND(CX,CY,Im,thickness,display_on)
-CX_or=CX;
-CY_or=CY;
 
-CX=[CX(1) CX(end)]; % Extremities X of the line in original image
-CY=[CY(1) CY(end)]; % Extremities Y of the line in original image
+CX_or = CX;
+CY_or = CY;
 
-CX=CX-size(Im,2)/2; % SUBTRACTION OF THE ORIGIN
-CY=CY-size(Im,1)/2;
+CX = [CX(1) CX(end)]; % Extremities X of the line in original image
+CY = [CY(1) CY(end)]; % Extremities Y of the line in original image
 
-thetaR=atan2(CY(2)-CY(1),CX(2)-CX(1)); %  CALCULATION OF THE ROTATION ANGLE OF THE LINE  THE IMAGE
-[thetaP,rhoP]=cart2pol(CX,CY);  %  CALCULATION OF THE POLAR COORDINATES before ROTATION AND ORIGIN CENTERING
-thetaN=thetaP - thetaR;
+CX = CX - size(Im,2)/2; % SUBTRACTION OF THE ORIGIN
+CY = CY - size(Im,1)/2;
 
-[Xnew,Ynew]=pol2cart(thetaN,rhoP); %CALCULATION OF THE LINE COORDINATES IN THE ROTATED IMAGE CENTERED
-rotated_Im=imrotate(Im,rad2deg(thetaR),'bilinear','crop'); % CROPPED ROTATED IMAGE
+thetaR = atan2(CY(2)-CY(1), CX(2)-CX(1)); %  CALCULATION OF THE ROTATION ANGLE OF THE LINE  THE IMAGE
+[thetaP, rhoP] = cart2pol(CX, CY);  %  CALCULATION OF THE POLAR COORDINATES before ROTATION AND ORIGIN CENTERING
+thetaN = thetaP - thetaR;
 
-Xnew=Xnew+(size(Im,2)/2);
-Ynew=Ynew+(size(Im,1)/2);
+[Xnew, Ynew] = pol2cart(thetaN, rhoP); %CALCULATION OF THE LINE COORDINATES IN THE ROTATED IMAGE CENTERED
+rotated_Im = imrotate(Im, rad2deg(thetaR), 'nearest', 'crop'); % CROPPED ROTATED IMAGE
+% Change to 'nearest' in imrotate() has neglible effect on result and speeds up by ~30%
+
+Xnew = Xnew + (size(Im,2)/2);
+Ynew = Ynew + (size(Im,1)/2);
 Xnew=round(Xnew);
-Ynew_ofs(1)=round (Ynew(1)-thickness/2);
-Ynew_ofs(2)=round (Ynew(2)+thickness/2);
-Ynew=round(Ynew);
+Ynew_ofs(1) = round(Ynew(1) - thickness/2);
+Ynew_ofs(2) = round(Ynew(2) + thickness/2);
+Ynew = round(Ynew);
 %FAT_LINE_AVG=rotated_Im(round(Ynew(1)-thickness/2):round(Ynew(1)+thickness/2),round(Xnew(1)):round(Xnew(2)));
-FAT_LINE_AVG=rotated_Im(Ynew_ofs(1):Ynew_ofs(2),Xnew(1):Xnew(2));
-FAT_LINE_AVG=mean(FAT_LINE_AVG,1);
+FAT_LINE_AVG = rotated_Im(Ynew_ofs(1):Ynew_ofs(2), Xnew(1):Xnew(2));
+FAT_LINE_AVG = mean(FAT_LINE_AVG);
 
-if (display_on==1)    
+if (display_on==1)
     figure (90)
     imagesc(Im);colormap (gray);axis 'equal'
     hold on
     plot (CX_or,CY_or)
-    hold off
     
     figure (91)
     imagesc(rotated_Im);colormap (gray);axis 'equal'
@@ -64,7 +65,6 @@ if (display_on==1)
     hold off
     
     figure (92)
-    plot (FAT_LINE_AVG)
-end
-
+    hold on
+    plot (FAT_LINE_AVG,'g')
 end

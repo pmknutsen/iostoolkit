@@ -12,9 +12,12 @@ for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
     Xi_S=T.AA(CST).Xi_S;
     Yi_S=T.AA(CST).Yi_S;
     box_im=T.mFrame(box_lim(1):box_lim(2),box_lim(3):box_lim(4));%EXTRACTED THE BOX FROM FRAME
-    [FAT_LINE_AVG,~,~,~]=CM_ROTATE_LINE_ORIENTATION_SAND(Xi_S,Yi_S,box_im,thickness,0);
+    %[FAT_LINE_AVG,~,~,~]=CM_ROTATE_LINE_ORIENTATION_SAND(Xi_S,Yi_S,box_im,thickness,0);
+    FAT_LINE_AVG = improfilefast(box_im,Xi_S,Yi_S,thickness);
+    
     %FAT_DET=-detrend(FAT_LINE_AVG);
     FAT_DET=-FAT_LINE_AVG;
+    
     [dia_temp p1_vec_temp p2_vec_temp an_profile]= CM_calcFWHM(detrend(FAT_DET),1); % CELINE ADDED THE DETREND 20140803 TO COMPENSATE FOR UNSUFFICIENT IR IREGULAR RADIAL CORRECTION
     
     if (To_init) % preallocate the data and set the data

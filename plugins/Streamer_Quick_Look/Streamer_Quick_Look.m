@@ -244,36 +244,38 @@ while f <= round( (length(vFrames) - T.nFramestep) / 2) * 2
     % Run sandbox function
     T = T.SandboxCallback(T);
     
-    % Display frame
+    % Update frame display
     if T.bView && ishandle(T.hFig)
-        set(T.hImg(T.vChOrder(T.nCh)), 'cdata', T.mFrame)
-        
-        % Set axis limits
-        vXlim = get(T.hAx(T.vChOrder(T.nCh)), 'xlim');
-        if any(vXlim > size(T.mFrame))
-            set(T.hAx(T.vChOrder(T.nCh)), 'clim', T.vCLim, ...
-                'xlim', [0 size(T.mFrame, 1)], ...
-                'ylim', [0 size(T.mFrame, 2)] );
-        end
-        
-        % Update frame legend
-        set(T.hFrameLegend, 'string', sprintf('Frame# %d', T.f))
-        
         % Update slider position
         set(T.hFrameSlider, 'value', T.f)
         
-        % Update graphs
-        if isfield(T, 'mGraphs')
-            nStart = (T.nSkipInitialFrames) + T.nCh;
-            %mYY = T.mGraphs(nStart:T.nNumColChans:end, T.nCh);
-            %mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
-            mYY = T.mGraphs(nStart:end, T.nCh);
-            mXX = nStart:size(T.mGraphs, 1);
-            iRem = isnan(mYY);
-            mYY(iRem) = [];
-            mXX(iRem) = [];
-            set(T.hGraphs(T.nCh), 'xdata', mXX, 'ydata', mYY);
-            %set(get(T.hGraphs(T.nCh), 'parent'), 'color', 'none');
+        if (mod(T.f, T.nDisplaystep) == 0)
+            set(T.hImg(T.vChOrder(T.nCh)), 'cdata', T.mFrame)
+            
+            % Set axis limits
+            vXlim = get(T.hAx(T.vChOrder(T.nCh)), 'xlim');
+            if any(vXlim > size(T.mFrame))
+                set(T.hAx(T.vChOrder(T.nCh)), 'clim', T.vCLim, ...
+                    'xlim', [0 size(T.mFrame, 1)], ...
+                    'ylim', [0 size(T.mFrame, 2)] );
+            end
+            
+            % Update frame legend
+            set(T.hFrameLegend, 'string', sprintf('Frame# %d', T.f))
+            
+            % Update graphs
+            if isfield(T, 'mGraphs')
+                nStart = (T.nSkipInitialFrames) + T.nCh;
+                %mYY = T.mGraphs(nStart:T.nNumColChans:end, T.nCh);
+                %mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
+                mYY = T.mGraphs(nStart:end, T.nCh);
+                mXX = nStart:size(T.mGraphs, 1);
+                iRem = isnan(mYY);
+                mYY(iRem) = [];
+                mXX(iRem) = [];
+                set(T.hGraphs(T.nCh), 'xdata', mXX, 'ydata', mYY);
+                %set(get(T.hGraphs(T.nCh), 'parent'), 'color', 'none');
+            end
         end
     else
         % Display progress in command window

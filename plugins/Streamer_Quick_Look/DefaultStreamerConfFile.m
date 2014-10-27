@@ -15,8 +15,13 @@ T.nBaselineFrames = 500;
 % Number of initial frames to skip
 T.nSkipInitialFrames = 20;
 
-% Number of frames to step between
+% Step between analysed frames
 T.nFramestep = 1;
+
+% Step between displayed frames
+% If nNumColChans is an even number this number should be t should be an
+% odd number
+T.nDisplaystep = 51;
 
 % Sandbox function - @YourFunctionName
 % Any Matlab function that you want to execute for each frame.

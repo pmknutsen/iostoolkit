@@ -123,10 +123,16 @@ tInfo(1).vResolution = vResolution(1:2);
 tInfo(1).sFile = sFile;
 tInfo(1).nBitDepth = vResolution(3);
 tInfo(1).nBytesPerFrame = nFrameBytes;
-tInfo(1).nNumMissedFrames = nNumMissedFrames;
+if exist('nNumMissedFrames', 'var')
+    tInfo(1).nNumMissedFrames = nNumMissedFrames;
+end
 tInfo(1).sType = sType;
-tInfo(1).nNumFrames = nNumFrames;
-tInfo(1).nFPS = nFPS;
+if exist('nNumFrames', 'var')
+    tInfo(1).nNumFrames = nNumFrames;
+end
+if exist('nFPS', 'var')
+    tInfo(1).nFPS = nFPS;
+end
 tInfo(1).nStartFrame = nFrom;
 tInfo(1).nEndFrame = nTo;
 varargout{1} = tInfo;

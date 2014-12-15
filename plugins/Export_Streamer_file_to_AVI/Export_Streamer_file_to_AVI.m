@@ -15,6 +15,11 @@ function Export_Streamer_file_to_AVI(hObject, eventdata, handles)
 %   Adjust output framerate
 %   Text overlays (frame# and absolute time)
 %
+clear mex
+
+bTranspose = 1; % true/false
+bFlipUD = 1;
+nSubtractVal = 60;
 
 % Get filename and path
 T.sPath = get(handles.path, 'string');
@@ -85,7 +90,6 @@ p_nFPSOut = str2num(cAns{4});
 p_bOverlays = str2num(cAns{5});
 p_nRescale = str2num(cAns{6});
 
-T.nFPS = p_nFPSOut;
 if p_nStartFrame < 1, p_nStartFrame = 1; end
 if p_nStartFrame > T.nNumFrames, p_nStartFrame = T.nNumFrames; end
 if p_nEndFrame < 1, p_nEndFrame = 1; end
@@ -100,7 +104,8 @@ truesize(hFig, T.vResolution(1:2) ./ p_nRescale)
 colormap(hAx, gray(256))
 axis(hAx, 'image', 'off')
 if p_bOverlays
-    hTxt = text(10, 30, 'Frame# 0', 'parent', hAx, 'color', 'r', 'fontsize', 12);
+    hTxt = text(10, 30, '', 'parent', hAx, 'color', 'w', ...
+        'fontsize', 10, 'fontname', 'sans', 'fontweight', 'bold');
 end
 
 % Initiate object for storing AVI
@@ -109,12 +114,12 @@ end
 T.sVideoFile = fullfile(T.sPath, [T.sBasefile '.avi']);
 if exist('VideoWriter', 'file')
     oVideo = VideoWriter(T.sVideoFile);
-    oVideo.FrameRate = T.nFPS;
+    oVideo.FrameRate = p_nFPSOut;
     open(oVideo);
 else
     oVideo = avifile(T.sVideoFile);
     oVideo.Compression = 'none';
-    oVideo.FPS = T.nFPS;
+    oVideo.FPS = p_nFPSOut;
 end
 
 % Open handle to data file
@@ -125,6 +130,18 @@ for f = p_nStartFrame:p_nSkipFrame:p_nEndFrame
     % Read frame
     mImg = ISI_readStreamer(FID, f, T.vResolution);
     
+    if bTranspose
+        mImg = mImg';
+    end
+
+    if bFlipUD
+        mImg = flipud(mImg);
+    end
+    
+    if nSubtractVal > 0
+        mImg = mImg - nSubtractVal;
+    end
+    
     % Check if figure still exists
     if ishandle(hFig)
         % Display frame
@@ -133,7 +150,7 @@ for f = p_nStartFrame:p_nSkipFrame:p_nEndFrame
         % Text overlays
         if p_bOverlays
             nSec = f / T.nFPS; % absolute time in seconds
-            set(hTxt, 'string', sprintf('Frame# %d, %.2f s', f, nSec));
+            set(hTxt, 'string', sprintf('%.2f s', nSec));
         end
 
         drawnow

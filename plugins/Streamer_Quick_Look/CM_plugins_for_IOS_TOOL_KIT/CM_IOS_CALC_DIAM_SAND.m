@@ -7,7 +7,8 @@ CST_MAX=length(T.AA);% AA contains the info necessary to measure the vessel diam
 T.Dia_index=((((T.f-T.nSkipInitialFrames)+T.vChOrder(2))/2)-(T.vChOrder(2)-1));% CM_to fix with logic done
 
 
-for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
+%for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
+for CST= 3 % PK Temp fix to plot just one vessel
     box_lim=T.AA(CST).box_lim;
     Xi_S=T.AA(CST).Xi_S;
     Yi_S=T.AA(CST).Yi_S;
@@ -44,12 +45,10 @@ for CST=1:1:CST_MAX % GOES THROUGH the different line profiles
     if T.bView && ishandle(T.hFig)
         nStart = (T.nSkipInitialFrames) + T.nCh; %% NOT CLEAR
         mYY = T.mGraphs(nStart:T.nNumColChans:end,T.nNumColChans+CST);
-        mXX = nStart:T.nNumColChans:size(T.mGraphs, 1);
+        mXX = (nStart:T.nNumColChans:size(T.mGraphs, 1)) ./ T.nVideoFPS;
         set(T.hGraphs(T.nNumColChans+CST), 'xdata', mXX, 'ydata', mYY);
         drawnow
     end
-    
-    
     
 end
 
@@ -121,20 +120,18 @@ mCols=varycolor(length(T.AA));
 %     mCols = [1 0 0; 0 0 1; 0 1 0; 1 0 1];
 T.hAx(end+1) = axes('position', [0 0.05 1 0.14]);% adds one axis to put all the diameters
 hold(T.hAx(end), 'on')
-%set(T.hAx(end), 'color', [1 1 1])
 set(T.hAx(end), 'color','none')
-
 
 for i = 1:length(T.AA)
     T.hGraphs(end+1) = plot(T.hAx(end), nan, '-', 'color', mCols(i, :));
-    set(T.hAx(end), 'fontsize', 8, 'xcolor', mCols(i, :), 'ycolor', mCols(i, :));
+    set(T.hAx(end), 'fontsize', 8, 'ycolor', mCols(i, :));
     set(T.hGraphs(end), 'xdata', 1:T.nVideoNumFrames, 'ydata', nan(T.nVideoNumFrames, 1));
     set(T.hAx(end), 'xlim', [(T.nSkipInitialFrames+1) T.nVideoNumFrames]);
 end
 %;
 
 linkaxes(T.hAx(T.nNumColChans+1:end), 'x')
-h = zoom;
+h = zoom(T.hFig);
 setAxesZoomMotion(h, T.hAx(T.nNumColChans+1:end), 'horizontal')
 
 return

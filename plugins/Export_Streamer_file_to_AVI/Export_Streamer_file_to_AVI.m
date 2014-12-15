@@ -109,7 +109,7 @@ end
 T.sVideoFile = fullfile(T.sPath, [T.sBasefile '.avi']);
 if exist('VideoWriter', 'file')
     oVideo = VideoWriter(T.sVideoFile);
-    oVideo.FrameRate = T.nNumFrames;
+    oVideo.FrameRate = T.nFPS;
     open(oVideo);
 else
     oVideo = avifile(T.sVideoFile);
@@ -160,7 +160,11 @@ for f = p_nStartFrame:p_nSkipFrame:p_nEndFrame
 end
 
 % Close open file handles
-oVideo = close(oVideo);
+if exist('VideoWriter', 'file')
+    close(oVideo);
+else
+    oVideo = close(oVideo);
+end
 fclose(FID);
 
 % Close figure

@@ -168,7 +168,7 @@ function getdatafile_Callback(hObject, eventdata, handles)
 % 
 %
 
-if isempty(eventdata)
+if isempty(eventdata) || isa(eventdata, 'matlab.ui.eventdata.ActionData')
     curdir = pwd;
     cd(handles.pathstr); % move to path directory
     [datafile, path2file] = uigetfile( ...

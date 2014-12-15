@@ -1,37 +1,39 @@
-function [mFrames, varargout] = ISI_readStreamer(sFile, varargin)
+function [mFrames, varargout] = readstreamer(sFile, varargin)
 % READSTREAMER Read Streamer binary files into Matlab
-%   M = readstreamer(FILENAME)
-%     open FILENAME and read all frames into matrix M
 %
-%   M = readstreamer(FILENAME, S, E)
-%     open FILENAME and read all frames in the range S to E
+% M = readstreamer(F)
+%   open file in string F and read all frames into matrix M
 %
-%   M = readstreamer(FILENAME, F)
-%     open FILENAME and read frames indexed by F
+% M = readstreamer(F, S, E)
+%   open file in string F and read frames from S to E
 %
-%   M = readstreamer(FID, F, [I J B])
-%     read frames in F from an existing file handle FID, where the frame
-%     has resolution [I J B], where I and J is the size and B is the
-%     bit-depth. This syntax does not support reading a range of frames.
+% M = readstreamer(FID, F, [I J B])
+%   read frame number F from an existing file handle FID, where the frame
+%   has resolution [I J B], where I and J is the size and B is the
+%   bit-depth. This syntax does not support reading a range of frames.
 %
-%   M = readstreamer(..., ROI)
-%     read only the region of interest specified in ROI, where ROI is a
-%     vector [L T W H] denoting the Left/Top corner and Width/Height of the
-%     ROI, respectively.
+% M = readstreamer(..., ROI)
+%   read only the region of interest specified in ROI, where ROI is a
+%   vector [L T W H] denoting the Left/Top corner and Width/Height of the
+%   ROI, respectively.
 %
-%   [M T] = readstreamer(...)
-%     Returns the structure T with basic information on the data file.
+% [M T] = readstreamer(...)
+%   Returns the structure T with basic information on the data file.
 %
-%   Note:
-%     When readstreamer() is used with a file identifier (FID), the file must
-%     be opened and closed externally.
+% Note:
+%   When readstreamer() is used with a file identifier (FID), the file must
+%   be opened and closed externally.
 %
-%   Example:
-%     FID = fopen('filename.bin');
-%     mFrame = ISI_readStreamer(FID, [1024 1024 12]);
-%     fclose(FID);
-%     imagesc(mFrame)
-%  
+% Example:
+%   FID = fopen('filename.bin');
+%   mFrame = ISI_readStreamer(FID, [1024 1024 12]);
+%   fclose(FID);
+%   imagesc(mFrame)
+%
+% TODO:
+%   Add optional argument to read an ROI only (will speed up reading)
+%
+%
 % Per M Knutsen <pmknutsen@gmail.com>, 2014
 %
 
@@ -106,7 +108,7 @@ vROI = [];
 if length(varargin{end}) == 4
     vROI = varargin{end};
     vROI(4) = min([vResolution(2) vROI(2)+vROI(4)]); % height
-    vResolution(1) = min([vResolution(1) vROI(1)+vROI(3)-1]); % width
+    vResolution(1) = min([vResolution(1) vROI(1)+vROI(3)]); % width
     
     % Compute the frame byte offset (from top only)
     bOffset = vROI(2) - 1;

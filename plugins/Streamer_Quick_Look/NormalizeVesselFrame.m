@@ -5,6 +5,10 @@ function T = NormalizeVesselFrame(T)
 % Per M Knutsen <pmknutsen@gmail.com>
 % June 2014
 %
+% TODO
+%   Add dimension for # of channels in p_mBaselineNorm
+%       p_mBaselineNorm becomes c_mBaselineNorm, ie. a cell
+%
 
 % Normalize baseline
 % Baseline is only used for estimating image intensity limits below

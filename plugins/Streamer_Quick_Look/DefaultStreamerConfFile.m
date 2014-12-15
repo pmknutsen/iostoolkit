@@ -13,7 +13,7 @@ T.nCircBufferSize = 5;
 T.nBaselineFrames = 500;
 
 % Number of initial frames to skip
-T.nSkipInitialFrames = 20;
+T.nSkipInitialFrames = 13000;
 
 % Step between analysed frames
 T.nFramestep = 1;
@@ -21,7 +21,7 @@ T.nFramestep = 1;
 % Step between displayed frames
 % If nNumColChans is an even number this number should be t should be an
 % odd number
-T.nDisplaystep = 51;
+T.nDisplaystep = 7;
 
 % Sandbox function - @YourFunctionName
 % Any Matlab function that you want to execute for each frame.
@@ -32,7 +32,9 @@ T.SandboxCallback = @IOSAnalysis;
 T.nNumColChans = 2;
 
 % Colormap
-T.mColMap = gray(2^6);
+% Different colormap can be used for each color channel (requires R2014B)
+T.mColMap(:,:,1) = fireice(2^8);
+T.mColMap(:,:,2) = gray(2^8);
 
 % Pixel binning during estimation of radial intensity
 % Note: Higher number reduces execution time.
@@ -48,6 +50,9 @@ T.bView = 1;
 T.bLoad = 1;
 % Save T when last frame is processed
 T.bSave = 1;
+% Save frames to AVI file
+bSaveAVI = 1;
+nAVIFPS = 25;
 
 % End of user variables
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

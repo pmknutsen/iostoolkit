@@ -8,6 +8,10 @@ function mImg = BinImagePixels(mImg, nB)
 
 vSize = size(mImg);
 
+% Pad matrix to ensure that both dimensions are divisable by nB
+mImg = padarray(mImg, mod(nB - mod(vSize, nB), nB), 'symmetric', 'post');
+vSize = size(mImg);
+
 mImg = sum(reshape(mImg, nB, []), 1);
 mImg = reshape(mImg, vSize(1)/nB, []).'; % note transpose
 

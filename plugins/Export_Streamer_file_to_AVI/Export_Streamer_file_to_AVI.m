@@ -19,7 +19,8 @@ clear mex
 
 bTranspose = 1; % true/false
 bFlipUD = 1;
-nSubtractVal = 60;
+nSubtractVal = 20;
+vFontCol = [0 0 0];
 
 % Get filename and path
 T.sPath = get(handles.path, 'string');
@@ -104,7 +105,7 @@ truesize(hFig, T.vResolution(1:2) ./ p_nRescale)
 colormap(hAx, gray(256))
 axis(hAx, 'image', 'off')
 if p_bOverlays
-    hTxt = text(10, 30, '', 'parent', hAx, 'color', 'w', ...
+    hTxt = text(10, 30, '', 'parent', hAx, 'color', vFontCol, ...
         'fontsize', 10, 'fontname', 'sans', 'fontweight', 'bold');
 end
 
